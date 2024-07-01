@@ -9,52 +9,46 @@ const App = () => {
 
   const navigate = useNavigate();
 
-  // const socket = useSocket();
-  // const { setUser } = useUser();
-
-  // useEffect(() => {
-  //   return () => removeListeners();
-  // }, []);
-
-  // useEffect(() => {
-  //   setupListeners();
-  //   return () => removeListeners();
-  // }, [socket]);
-
-  // const setupListeners = () => {
-  //   if (!socket) return;
-
-  //   socket.on("start-game", (players, roomId) => {
-  //     setIsInQueue(false);
-
-  //     const user =
-  //       players.player1.id === socket.id ? players.player1 : players.player2;
-  //     setUser({ ...user, boardSide: user.color });
-
-  //     navigate(`/game/${roomId}`);
-  //   });
-
-  //   socket.on("joined-queue", () => setIsInQueue(true));
-  // };
-
-  // const removeListeners = () => {
-  //   if (!socket) return;
-
-  //   socket.off("start-game");
-  //   socket.off("joined-queue");
-  // };.
-
-  const joinGameAndWait = () => {
-    // socket.emit("join-game");
-  };
-
-  // if (!socket) return;
+  const socket = useSocket();
+  const { setUser } = useUser();
 
   useEffect(() => {
-    fetch("http://localhost:8080/log")
-      .then((res) => res.json())
-      .then((data) => console.log(data));
+    return () => removeListeners();
   }, []);
+
+  useEffect(() => {
+    setupListeners();
+    return () => removeListeners();
+  }, [socket]);
+
+  const setupListeners = () => {
+    if (!socket) return;
+
+    socket.on("start-game", (players, roomId) => {
+      setIsInQueue(false);
+
+      const user =
+        players.player1.id === socket.id ? players.player1 : players.player2;
+      setUser({ ...user, boardSide: user.color });
+
+      navigate(`/game/${roomId}`);
+    });
+
+    socket.on("joined-queue", () => setIsInQueue(true));
+  };
+
+  const removeListeners = () => {
+    if (!socket) return;
+
+    socket.off("start-game");
+    socket.off("joined-queue");
+  };
+
+  const joinGameAndWait = () => {
+    socket.emit("join-game");
+  };
+
+  if (!socket) return;
 
   return (
     <Routes>

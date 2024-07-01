@@ -12,9 +12,9 @@ const Socket = ({ children }) => {
 
   useEffect(() => {
     // const socket = io("ws://localhost:8080/");
-    const socket = io(
-      "https://pawns-playground-mern-3jc1srguz-shibcodes-projects-b9c69217.vercel.app"
-    );
+    const socket = io("https://pawns-playground-mern.vercel.app", {
+      transports: ["websocket"],
+    });
 
     socket.on("connect", () => {
       setSocket(socket);
