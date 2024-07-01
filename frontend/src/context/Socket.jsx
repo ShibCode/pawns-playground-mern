@@ -12,7 +12,7 @@ const Socket = ({ children }) => {
 
   useEffect(() => {
     // const socket = io("ws://localhost:8080/");
-    const socket = io("https://pawns-playground-mern.vercel.app", {
+    const socket = io("https://pawns-playground-mern.onrender.com/", {
       transports: ["websocket"],
     });
 
