@@ -9,46 +9,52 @@ const App = () => {
 
   const navigate = useNavigate();
 
-  const socket = useSocket();
-  const { setUser } = useUser();
+  // const socket = useSocket();
+  // const { setUser } = useUser();
 
-  useEffect(() => {
-    return () => removeListeners();
-  }, []);
+  // useEffect(() => {
+  //   return () => removeListeners();
+  // }, []);
 
-  useEffect(() => {
-    setupListeners();
-    return () => removeListeners();
-  }, [socket]);
+  // useEffect(() => {
+  //   setupListeners();
+  //   return () => removeListeners();
+  // }, [socket]);
 
-  const setupListeners = () => {
-    if (!socket) return;
+  // const setupListeners = () => {
+  //   if (!socket) return;
 
-    socket.on("start-game", (players, roomId) => {
-      setIsInQueue(false);
+  //   socket.on("start-game", (players, roomId) => {
+  //     setIsInQueue(false);
 
-      const user =
-        players.player1.id === socket.id ? players.player1 : players.player2;
-      setUser({ ...user, boardSide: user.color });
+  //     const user =
+  //       players.player1.id === socket.id ? players.player1 : players.player2;
+  //     setUser({ ...user, boardSide: user.color });
 
-      navigate(`/game/${roomId}`);
-    });
+  //     navigate(`/game/${roomId}`);
+  //   });
 
-    socket.on("joined-queue", () => setIsInQueue(true));
-  };
+  //   socket.on("joined-queue", () => setIsInQueue(true));
+  // };
 
-  const removeListeners = () => {
-    if (!socket) return;
+  // const removeListeners = () => {
+  //   if (!socket) return;
 
-    socket.off("start-game");
-    socket.off("joined-queue");
-  };
+  //   socket.off("start-game");
+  //   socket.off("joined-queue");
+  // };.
 
   const joinGameAndWait = () => {
-    socket.emit("join-game");
+    // socket.emit("join-game");
   };
 
-  if (!socket) return;
+  // if (!socket) return;
+
+  useEffect(() => {
+    fetch("http://localhost:8080/log")
+      .then((res) => res.json())
+      .then((data) => console.log(data));
+  }, []);
 
   return (
     <Routes>

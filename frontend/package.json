@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "proxy": "https://pawns-playground-mern-3jc1srguz-shibcodes-projects-b9c69217.vercel.app/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
