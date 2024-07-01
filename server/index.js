@@ -1,10 +1,21 @@
 const express = require("express");
-const app = express();
 const { createServer } = require("http");
-const server = createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server, { cors: "*" });
+const cors = require("cors");
 const setupListeners = require("./setupListeners");
+
+const app = express();
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["POST", "GET"],
+    credentials: true,
+  })
+);
+
+const server = createServer(app);
+const io = new Server(server, { cors: "*" });
 setupListeners(io);
 
 app.get("/", (req, res) => {
