@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --tile-size: 12.5vh;
+  }
+
+  body {
+    background-color: #333;
+  }
+
+  .game > * {
+    user-select: none;
+  }
+}
