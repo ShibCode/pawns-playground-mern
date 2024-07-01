@@ -11,7 +11,9 @@ const Socket = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const socket = io("ws://localhost:8080/");
+    const socket = io(
+      "https://pawns-playground-mern-3jc1srguz-shibcodes-projects-b9c69217.vercel.app/"
+    );
 
     socket.on("connect", () => {
       setSocket(socket);
