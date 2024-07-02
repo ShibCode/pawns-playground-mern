@@ -20,7 +20,7 @@ const Pieces = () => {
 
   const setupListeners = () => {
     socket.on("move-response", (pieces, turn, sound) => {
-      console.log("move");
+
 
       setPieces(pieces);
 

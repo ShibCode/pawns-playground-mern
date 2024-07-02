@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef } from "react";
 import { usePieces } from "../../context/Pieces";
 import tilePosition from "../../data/tilesPosition.json";
 import letterKeys from "../../data/letterKeys.json";
 import { useUser } from "../../context/User";
-import generateMoves from "./generateMoves";
 import Draggable from "react-draggable";
 import incrementPosition from "../../utils/incrementPosition";
 import { useSocket } from "../../context/Socket";
@@ -14,12 +13,10 @@ const Piece = ({
   src,
   position,
   possibleMoves,
-  canCastle,
   index,
   clickedPiece,
   setClickedPiece,
   turn,
-  setTurn,
 }) => {
   const { x, y } = tilePosition[position]; // current position of the piece on the board
   const { color, name, number } = description;

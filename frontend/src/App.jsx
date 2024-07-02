@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useSocket } from "./context/Socket";
 import { useUser } from "./context/User";
 import Game from "./pages/Game";
@@ -12,7 +12,11 @@ const App = () => {
   const socket = useSocket();
   const { setUser } = useUser();
 
+  const location = useLocation();
   useEffect(() => {
+    //temp
+    if (location.pathname !== "/") window.location.assign("/");
+
     return () => removeListeners();
   }, []);
 
@@ -27,9 +31,8 @@ const App = () => {
     socket.on("start-game", (players, roomId) => {
       setIsInQueue(false);
 
-      const user =
-        players.player1.id === socket.id ? players.player1 : players.player2;
-      setUser({ ...user, boardSide: user.color });
+      const user = players.find((player) => player.id === socket.id);
+      setUser(user);
 
       navigate(`/game/${roomId}`);
     });

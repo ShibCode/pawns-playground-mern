@@ -211,7 +211,13 @@ const queen = (pieces, position, color) => {
   return possibleMoves;
 };
 
-const king = (pieces, position, color, canCastle) => {
+const king = (
+  pieces,
+  position,
+  color,
+  canCastleKingSide,
+  canCastleQueenSide
+) => {
   const occupiedTiles = getOccupiedTiles(pieces);
 
   const up1 = incrementPosition(position, [0, 1]);
@@ -226,6 +232,9 @@ const king = (pieces, position, color, canCastle) => {
   const kingSideCastle = incrementPosition(position, [2, 0]);
   const queenSideCastle = incrementPosition(position, [-2, 0]);
 
+  const cantCastleKingSide = occupiedTiles.some((t) => t.position === right1);
+  const cantCastleQueenSide = occupiedTiles.some((t) => t.position === left1);
+
   const allMoves = [
     up1,
     right1,
@@ -235,8 +244,8 @@ const king = (pieces, position, color, canCastle) => {
     up1Right1,
     down1Left1,
     down1Right1,
-    canCastle ? kingSideCastle : undefined,
-    canCastle ? queenSideCastle : undefined,
+    canCastleKingSide && !cantCastleKingSide ? kingSideCastle : undefined,
+    canCastleQueenSide && !cantCastleQueenSide ? queenSideCastle : undefined,
   ];
 
   const rawPossibleMoves = allMoves.filter((move) => move);

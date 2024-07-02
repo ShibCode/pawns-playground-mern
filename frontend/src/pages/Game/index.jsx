@@ -4,7 +4,7 @@ import Pieces from "./Pieces";
 import { useUser } from "../../context/User";
 
 const Game = () => {
-  const { user, setUser } = useUser();
+  const { setUser } = useUser();
 
   const reverseBoard = () => {
     setUser((prev) => ({
@@ -21,11 +21,11 @@ const Game = () => {
           <Pieces />
         </div>
 
-        <div>
+        {/* <div>
           <button onClick={reverseBoard}>
             <img src="/icons/switch.svg" alt="switch" className="w-10" />
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

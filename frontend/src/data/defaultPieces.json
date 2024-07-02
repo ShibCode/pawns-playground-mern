@@ -57,8 +57,7 @@
     "src": "/pieces/bk.png",
     "position": "e8",
     "defaultPosition": "e8",
-    "possibleMoves": [],
-    "canCastle": true
+    "possibleMoves": []
   },
   {
     "description": {
@@ -347,8 +346,7 @@
     "src": "/pieces/wk.png",
     "position": "e1",
     "defaultPosition": "e1",
-    "possibleMoves": [],
-    "canCastle": true
+    "possibleMoves": []
   },
   {
     "description": {
