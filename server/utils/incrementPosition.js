@@ -15,4 +15,4 @@ const incrementPosition = (position, translationVector) => {
   return newPosition;
 };
 
-export default incrementPosition;
+module.exports = incrementPosition;

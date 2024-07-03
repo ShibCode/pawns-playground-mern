@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useSocket } from "./context/Socket";
-import { useUser } from "./context/User";
 import Game from "./pages/Game";
+import Home from "./pages/Home";
+import { useUser } from "./context/User";
 
 const App = () => {
-  const [isInQueue, setIsInQueue] = useState(false);
-
   const navigate = useNavigate();
 
   const socket = useSocket();
@@ -14,10 +13,7 @@ const App = () => {
 
   const location = useLocation();
   useEffect(() => {
-    //temp
     if (location.pathname !== "/") window.location.assign("/");
-
-    return () => removeListeners();
   }, []);
 
   useEffect(() => {
@@ -28,50 +24,34 @@ const App = () => {
   const setupListeners = () => {
     if (!socket) return;
 
-    socket.on("start-game", (players, roomId) => {
-      setIsInQueue(false);
+    const onGoingGame = JSON.parse(localStorage.getItem("ongoing-game"));
+    if (onGoingGame) {
+      socket.emit(
+        "request-continue-game",
+        onGoingGame.roomId,
+        onGoingGame.playerId
+      );
+    }
 
-      const user = players.find((player) => player.id === socket.id);
-      setUser(user);
+    socket.on("redirect-home", () => navigate("/"));
+    socket.on("response-continue-game", (player, roomId) => {
+      // ! Create a game context
 
+      setUser({ ...player, boardSide: player.color, isPlaying: true });
       navigate(`/game/${roomId}`);
     });
-
-    socket.on("joined-queue", () => setIsInQueue(true));
   };
 
   const removeListeners = () => {
     if (!socket) return;
-
-    socket.off("start-game");
-    socket.off("joined-queue");
-  };
-
-  const joinGameAndWait = () => {
-    socket.emit("join-game");
+    socket.off("redirect-home");
   };
 
   if (!socket) return;
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={
-          <div className="flex justify-center items-center h-screen">
-            <button
-              onClick={() => {
-                if (!isInQueue) joinGameAndWait();
-              }}
-              disabled={isInQueue}
-              className="px-6 min-w-[200px] h-[60px] rounded-md bg-white text-black border-2 border-white text-xl font-semibold transition-all duration-200 hover:bg-transparent hover:text-white disabled:hover:bg-white disabled:hover:text-black disabled:opacity-80"
-            >
-              {isInQueue ? "Waiting for an opponent..." : "Join Game!"}
-            </button>
-          </div>
-        }
-      />
-
+      <Route path="/" element={<Home />} />
       <Route path="/game/:roomId" element={<Game />} />
     </Routes>
   );

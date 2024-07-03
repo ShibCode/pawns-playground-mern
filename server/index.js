@@ -2,7 +2,7 @@ const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const setupListeners = require("./setupListeners");
+const initSocket = require("./socket/index.js");
 
 const app = express();
 
@@ -16,7 +16,9 @@ app.use(
 
 const server = createServer(app);
 const io = new Server(server);
-setupListeners(io);
+initSocket(io);
+
+// io.on('connection', socket => socket.lea)
 
 app.get("/", (req, res) => {
   return res.json({ msg: "Hello" });

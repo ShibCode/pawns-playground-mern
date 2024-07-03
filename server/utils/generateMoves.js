@@ -1,16 +1,8 @@
 const incrementPosition = require("./incrementPosition");
 
-const getOccupiedTiles = (pieces) => {
-  return pieces.map((piece) => ({
-    position: piece.position,
-    color: piece.description.color,
-  }));
-};
-
 const pawn = (pieces, position, color, defaultPosition) => {
   const possibleMoves = [];
 
-  // if color is white, the num stays num but if it is black it changes to -num since black pawns wud move in the opposite direction :)
   const adjustForColor = (num) => (color === "white" ? num : -num);
 
   const Up1 = incrementPosition(position, [0, adjustForColor(1)]);
@@ -48,48 +40,6 @@ const pawn = (pieces, position, color, defaultPosition) => {
   return possibleMoves;
 };
 
-const rook = (pieces, position, color) => {
-  const possibleMoves = [];
-
-  const occupiedTiles = getOccupiedTiles(pieces);
-
-  const translationVectors = [
-    [0, 1],
-    [1, 0],
-    [0, -1],
-    [-1, 0],
-  ];
-
-  translationVectors.forEach((vector) => {
-    let [x, y] = [0, 0];
-
-    while (true) {
-      const move = incrementPosition(position, [x + vector[0], y + vector[1]]);
-
-      if (move === null) return;
-
-      const movementHindered = occupiedTiles.find(
-        (tile) => tile.position === move
-      );
-
-      if (!movementHindered) {
-        possibleMoves.push(move);
-
-        x += vector[0];
-        y += vector[1];
-
-        continue;
-      }
-
-      if (movementHindered.color !== color) possibleMoves.push(move);
-
-      return;
-    }
-  });
-
-  return possibleMoves;
-};
-
 const knight = (pieces, position, color) => {
   const occupiedTiles = getOccupiedTiles(pieces);
 
@@ -118,94 +68,6 @@ const knight = (pieces, position, color) => {
   const possibleMoves = rawPossibleMoves.filter((move) => {
     const isOccupied = occupiedTiles.find((tile) => tile.position === move);
     return isOccupied?.color !== color;
-  });
-
-  return possibleMoves;
-};
-
-const bishop = (pieces, position, color) => {
-  const possibleMoves = [];
-
-  const occupiedTiles = getOccupiedTiles(pieces);
-
-  const translationVectors = [
-    [-1, 1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-  ];
-
-  translationVectors.forEach((vector) => {
-    let [x, y] = [0, 0];
-
-    while (true) {
-      const move = incrementPosition(position, [x + vector[0], y + vector[1]]);
-
-      if (move === null) return;
-
-      const movementHindered = occupiedTiles.find(
-        (tile) => tile.position === move
-      );
-
-      if (!movementHindered) {
-        possibleMoves.push(move);
-
-        x += vector[0];
-        y += vector[1];
-
-        continue;
-      }
-
-      if (movementHindered.color !== color) possibleMoves.push(move);
-
-      return;
-    }
-  });
-
-  return possibleMoves;
-};
-
-const queen = (pieces, position, color) => {
-  const possibleMoves = [];
-
-  const occupiedTiles = getOccupiedTiles(pieces);
-
-  const translationVectors = [
-    [-1, 1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [0, 1],
-    [1, 0],
-    [0, -1],
-    [-1, 0],
-  ];
-
-  translationVectors.forEach((vector) => {
-    let [x, y] = [0, 0];
-
-    while (true) {
-      const move = incrementPosition(position, [x + vector[0], y + vector[1]]);
-
-      if (move === null) return;
-
-      const movementHindered = occupiedTiles.find(
-        (tile) => tile.position === move
-      );
-
-      if (!movementHindered) {
-        possibleMoves.push(move);
-
-        x += vector[0];
-        y += vector[1];
-
-        continue;
-      }
-
-      if (movementHindered.color !== color) possibleMoves.push(move);
-
-      return;
-    }
   });
 
   return possibleMoves;
@@ -258,6 +120,32 @@ const king = (
   return possibleMoves;
 };
 
+const rookTV = [
+  [0, 1],
+  [1, 0],
+  [0, -1],
+  [-1, 0],
+];
+
+const bishopTV = [
+  [-1, 1],
+  [1, 1],
+  [-1, -1],
+  [1, -1],
+];
+
+const queenTV = [...bishopTV, ...rookTV];
+
+const rook = (pieces, position, color) => {
+  return generateContinousMoves(rookTV, pieces, position, color);
+};
+const bishop = (pieces, position, color) => {
+  return generateContinousMoves(bishopTV, pieces, position, color);
+};
+const queen = (pieces, position, color) => {
+  return generateContinousMoves(queenTV, pieces, position, color);
+};
+
 const generateMoves = {
   pawn,
   rook,
@@ -268,3 +156,44 @@ const generateMoves = {
 };
 
 module.exports = generateMoves;
+
+function generateContinousMoves(translationVectors, pieces, position, color) {
+  const possibleMoves = [];
+  const occupiedTiles = getOccupiedTiles(pieces);
+
+  translationVectors.forEach((vector) => {
+    let [x, y] = [0, 0];
+
+    while (true) {
+      const move = incrementPosition(position, [x + vector[0], y + vector[1]]);
+
+      if (move === null) return;
+
+      const movementHindered = occupiedTiles.find(
+        (tile) => tile.position === move
+      );
+
+      if (!movementHindered) {
+        possibleMoves.push(move);
+
+        x += vector[0];
+        y += vector[1];
+
+        continue;
+      }
+
+      if (movementHindered.color !== color) possibleMoves.push(move);
+
+      break;
+    }
+  });
+
+  return possibleMoves;
+}
+
+function getOccupiedTiles(pieces) {
+  return pieces.map((piece) => ({
+    position: piece.position,
+    color: piece.description.color,
+  }));
+}

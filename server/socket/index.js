@@ -1,4 +1,4 @@
-const defaultPieces = require("./defaultPieces.json");
+const joinGame = require("./join-game.js");
 
 const {
   updatePosition,
@@ -7,70 +7,54 @@ const {
   adjustForChecks,
 } = require("./moveFunctions.js");
 
-function setupListeners(io) {
-  let rooms = [];
-  let queue = [];
+let rooms = [];
+let queue = [];
 
+function initSocket(io) {
   io.on("connection", (socket) => {
     socket.on("disconnect", () => {
       queue = queue.filter((player) => player.id !== socket.id);
     });
 
     socket.on("join-game", () => {
-      queue.push(socket);
+      joinGame(io, socket, queue, rooms);
+    });
 
-      if (queue.length === 2) {
-        queue[0].join("game-room-1");
-        queue[1].join("game-room-1");
+    socket.on("spectate-game", (roomId) => {
+      const room = rooms.find((room) => room.id === roomId);
 
-        const isWhite = Math.random() > 0.5;
+      if (!room) socket.emit("redirect-home");
 
-        const players = [
-          {
-            id: queue[0].id,
-            color: isWhite ? "white" : "black",
-            boardSide: isWhite ? "white" : "black",
-            canCastleKingSide: true,
-            canCastleQueenSide: true,
-          },
-          {
-            id: queue[1].id,
-            color: isWhite ? "black" : "white",
-            boardSide: isWhite ? "black" : "white",
-            canCastleKingSide: true,
-            canCastleQueenSide: true,
-          },
-        ];
+      socket.join(roomId);
+      socket.emit("move-response", room.pieces, room.Turn);
+    });
 
-        io.to("game-room-1").emit("start-game", players, "game-room-1");
+    socket.on("stop-spectate-game", (roomId) => {
+      socket.leave(roomId);
+    });
 
-        rooms.push({
-          id: "game-room-1",
-          pieces: [...defaultPieces],
-          turn: "white",
-          players,
-        });
-        queue = queue.slice(2);
-      } else {
-        socket.emit("joined-queue");
-      }
+    socket.on("request-ongoing-games", () => {
+      socket.emit(
+        "receive-ongoing-games",
+        rooms.map((room) => ({ id: room.id }))
+      );
+    });
+
+    socket.on("request-continue-game", (roomId, playerId) => {
+      const room = rooms.find((room) => room.id === roomId);
+      const player = room?.players.find((player) => player.id === playerId);
+
+      socket.emit("response-continue-game", player, roomId);
     });
 
     socket.on("move-request", (roomId, pieceIndex, newPosition) => {
       rooms = rooms.map((room) => {
         if (room.id !== roomId) return room;
 
-        const { pieces, turn, players } = room;
+        const { turn, players } = room;
 
         const white = players.find((p) => p.color === "white");
         const black = players.find((p) => p.color === "black");
-
-        const { newPieces1, isCapture } = updatePosition(
-          pieces,
-          pieceIndex,
-          newPosition,
-          players.find((p) => p.color === turn)
-        );
 
         const castle = {
           white: {
@@ -83,11 +67,19 @@ function setupListeners(io) {
           },
         };
 
-        let newPieces2 = updatePossibleMoves(newPieces1, castle);
-        const checkedTeam = findCheck(newPieces2);
+        let { pieces, isCapture } = updatePosition(
+          room.pieces,
+          pieceIndex,
+          newPosition,
+          players.find((p) => p.color === turn)
+        );
 
+        pieces = updatePossibleMoves(pieces, castle);
+        const checkedTeam = findCheck(pieces);
+
+        // disable castling if king is checked
         if (checkedTeam) {
-          newPieces2 = newPieces2.map((piece) => {
+          pieces = pieces.map((piece) => {
             const { position, possibleMoves } = piece;
             const { name, color } = piece.description;
 
@@ -107,7 +99,7 @@ function setupListeners(io) {
           });
         }
 
-        const newPieces3 = adjustForChecks(newPieces2, turn, castle);
+        pieces = adjustForChecks(pieces, turn, castle);
 
         let sound = "move";
         if (checkedTeam) sound = "check";
@@ -115,11 +107,11 @@ function setupListeners(io) {
 
         const newTurn = turn === "white" ? "black" : "white";
 
-        io.to(roomId).emit("move-response", newPieces3, newTurn, sound);
+        io.to(roomId).emit("move-response", pieces, newTurn, sound);
 
         return {
           ...room,
-          pieces: newPieces3,
+          pieces,
           turn: newTurn,
           players: [white, black],
         };
@@ -128,4 +120,4 @@ function setupListeners(io) {
   });
 }
 
-module.exports = setupListeners;
+module.exports = initSocket;

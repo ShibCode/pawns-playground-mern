@@ -25,8 +25,7 @@ const Piece = ({
   const { user } = useUser();
   const socket = useSocket();
 
-  const params = useParams();
-  const { roomId } = params;
+  const { roomId } = useParams();
 
   const move = (e, newPos = "") => {
     if (turn !== color || turn !== user.color) return;
@@ -47,10 +46,10 @@ const Piece = ({
   };
 
   const handleDrag = () => {
-    setClickedPiece(index);
+    if (clickedPiece !== index) setClickedPiece(index);
   };
 
-  const handleStop = (_, data) => {
+  const handleDragStop = (_, data) => {
     const tileSize = window.innerHeight / 8;
 
     const translateX = Math.round(data.x / tileSize);
@@ -62,11 +61,7 @@ const Piece = ({
         : incrementPosition(position, [-translateX, -translateY]);
 
     if (possibleMoves.includes(newPos)) move("", newPos);
-
-    setClickedPiece(null);
   };
-
-  const pieceRef = useRef();
 
   return (
     <>
@@ -79,11 +74,10 @@ const Piece = ({
 
       <Draggable
         onDrag={handleDrag}
-        onStop={handleStop}
+        onStop={handleDragStop}
         position={{ x: 0, y: 0 }}
       >
         <img
-          ref={pieceRef}
           id={`${color}-${name}-${number}`}
           src={src}
           style={{
@@ -96,7 +90,7 @@ const Piece = ({
           draggable={false}
           onClick={() => {
             if (index === clickedPiece) setClickedPiece(null);
-            else if (turn === color) setClickedPiece(index);
+            else setClickedPiece(index);
           }}
         />
       </Draggable>
@@ -111,18 +105,23 @@ const Piece = ({
           const isCapturable = pieces.some((p) => p.position === possibleMove);
 
           return (
-            <div
-              key={index}
-              style={{ translate: `${x} ${y}` }}
-              onClick={move}
-              className="absolute w-tile h-tile flex justify-center items-center bottom-0 left-0"
-            >
-              {isCapturable ? (
-                <div className="border-[calc(var(--tile-size)*0.09)] border-black w-full h-full rounded-full opacity-20" />
-              ) : (
-                <div className="bg-black w-[33%] aspect-square rounded-full opacity-20" />
-              )}
-            </div>
+            <React.Fragment key={index}>
+              <div
+                style={{ translate: `${x} ${y}` }}
+                onClick={move}
+                className="absolute w-tile h-tile flex justify-center items-center bottom-0 left-0 z-10"
+              ></div>
+              <div
+                style={{ translate: `${x} ${y}` }}
+                className="absolute w-tile h-tile flex justify-center items-center bottom-0 left-0"
+              >
+                {isCapturable ? (
+                  <div className="border-[calc(var(--tile-size)*0.09)] border-black w-full h-full rounded-full opacity-20" />
+                ) : (
+                  <div className="bg-black w-[33%] aspect-square rounded-full opacity-20" />
+                )}
+              </div>
+            </React.Fragment>
           );
         })}
     </>
