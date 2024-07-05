@@ -4,12 +4,14 @@ import { useSocket } from "./context/Socket";
 import Game from "./pages/Game";
 import Home from "./pages/Home";
 import { useUser } from "./context/User";
+import { useGame } from "./context/Game";
 
 const App = () => {
   const navigate = useNavigate();
 
   const socket = useSocket();
   const { setUser } = useUser();
+  const { setGame } = useGame();
 
   const location = useLocation();
   useEffect(() => {
@@ -34,11 +36,15 @@ const App = () => {
     }
 
     socket.on("redirect-home", () => navigate("/"));
-    socket.on("response-continue-game", (player, roomId) => {
-      // ! Create a game context
 
+    socket.on("response-continue-game", (room) => {
+      const player = room?.players.find(
+        (player) => player.id === onGoingGame.playerId
+      );
+
+      setGame({ turn: room.turn, pieces: room.pieces, opponent: "" });
       setUser({ ...player, boardSide: player.color, isPlaying: true });
-      navigate(`/game/${roomId}`);
+      navigate(`/game/${room.id}`);
     });
   };
 

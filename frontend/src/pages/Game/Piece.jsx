@@ -1,13 +1,9 @@
-import React, { useRef } from "react";
-import { usePieces } from "../../context/Pieces";
+import React from "react";
+import { useGame } from "../../context/Game";
 import tilePosition from "../../data/tilesPosition.json";
-import letterKeys from "../../data/letterKeys.json";
 import { useUser } from "../../context/User";
 import Draggable from "react-draggable";
 import incrementPosition from "../../utils/incrementPosition";
-import { useSocket } from "../../context/Socket";
-import { useParams } from "react-router-dom";
-
 const Piece = ({
   description,
   src,
@@ -17,33 +13,14 @@ const Piece = ({
   clickedPiece,
   setClickedPiece,
   turn,
+  move,
+  isProcessing,
 }) => {
   const { x, y } = tilePosition[position]; // current position of the piece on the board
-  const { color, name, number } = description;
+  const { color } = description;
 
-  const { pieces } = usePieces();
+  const { game } = useGame();
   const { user } = useUser();
-  const socket = useSocket();
-
-  const { roomId } = useParams();
-
-  const move = (e, newPos = "") => {
-    if (turn !== color || turn !== user.color) return;
-
-    if (newPos === "") {
-      const newPosStr = getComputedStyle(e.currentTarget).translate; // eg 0% -300%
-
-      const [rawX, rawY] = newPosStr
-        .split(" ")
-        .map((str) => +str.substring(0, str.length - 1)); // splits converts into [0%, -300%] and map removes the % sign
-
-      const [x, y] = [Math.abs(rawX / 100 + 1), Math.abs(rawY / 100 - 1)]; // +/- 1 to ensure coords starts from 1
-
-      newPos = `${letterKeys[x]}${y}`; // new position of the moved piece
-    }
-
-    socket.emit("move-request", roomId, index, newPos);
-  };
 
   const handleDrag = () => {
     if (clickedPiece !== index) setClickedPiece(index);
@@ -60,7 +37,14 @@ const Piece = ({
         ? incrementPosition(position, [translateX, translateY])
         : incrementPosition(position, [-translateX, -translateY]);
 
-    if (possibleMoves.includes(newPos)) move("", newPos);
+    if (
+      possibleMoves.includes(newPos) &&
+      turn === color &&
+      turn === user.color &&
+      !isProcessing
+    ) {
+      move("", index, newPos);
+    }
   };
 
   return (
@@ -78,7 +62,6 @@ const Piece = ({
         position={{ x: 0, y: 0 }}
       >
         <img
-          id={`${color}-${name}-${number}`}
           src={src}
           style={{
             translate: `${x} ${y}`,
@@ -99,16 +82,19 @@ const Piece = ({
       {clickedPiece === index &&
         turn === color &&
         turn === user.color &&
-        possibleMoves.map((possibleMove, index) => {
+        !isProcessing &&
+        possibleMoves.map((possibleMove, possibleMoveIndex) => {
           const { x, y } = tilePosition[possibleMove];
 
-          const isCapturable = pieces.some((p) => p.position === possibleMove);
+          const isCapturable = game.pieces.some(
+            (p) => p.position === possibleMove
+          );
 
           return (
-            <React.Fragment key={index}>
+            <React.Fragment key={possibleMoveIndex}>
               <div
                 style={{ translate: `${x} ${y}` }}
-                onClick={move}
+                onClick={(e) => move(e, index)}
                 className="absolute w-tile h-tile flex justify-center items-center bottom-0 left-0 z-10"
               ></div>
               <div

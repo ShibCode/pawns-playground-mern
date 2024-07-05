@@ -11,12 +11,10 @@ const Socket = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    //const socket = io("ws://localhost:8080/", {
-    //  transports: ["websocket"],
-    //});
-    const socket = io("https://pawns-playground-mern.onrender.com/", {
-       transports: ["websocket"],
-    });
+    const url = "ws://localhost:8080/";
+    // const url = "https://pawns-playground-mern.onrender.com/";
+
+    const socket = io(url, { transports: ["websocket"] });
 
     socket.on("connect", () => {
       setSocket(socket);

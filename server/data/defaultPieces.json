@@ -3,7 +3,6 @@
     "description": {
       "color": "black",
       "name": "rook",
-      "number": 1,
       "symbol": "R"
     },
     "src": "/pieces/br.png",
@@ -15,7 +14,6 @@
     "description": {
       "color": "black",
       "name": "knight",
-      "number": 1,
       "symbol": "N"
     },
     "src": "/pieces/bn.png",
@@ -27,7 +25,6 @@
     "description": {
       "color": "black",
       "name": "bishop",
-      "number": 1,
       "symbol": "B"
     },
     "src": "/pieces/bb.png",
@@ -39,7 +36,6 @@
     "description": {
       "color": "black",
       "name": "queen",
-      "number": null,
       "symbol": "Q"
     },
     "src": "/pieces/bq.png",
@@ -51,7 +47,6 @@
     "description": {
       "color": "black",
       "name": "king",
-      "number": null,
       "symbol": "K"
     },
     "src": "/pieces/bk.png",
@@ -63,7 +58,6 @@
     "description": {
       "color": "black",
       "name": "bishop",
-      "number": 2,
       "symbol": "B"
     },
     "src": "/pieces/bb.png",
@@ -75,7 +69,6 @@
     "description": {
       "color": "black",
       "name": "knight",
-      "number": 2,
       "symbol": "N"
     },
     "src": "/pieces/bn.png",
@@ -87,7 +80,6 @@
     "description": {
       "color": "black",
       "name": "rook",
-      "number": 2,
       "symbol": "R"
     },
     "src": "/pieces/br.png",
@@ -99,7 +91,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 1,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -111,7 +102,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 2,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -123,7 +113,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 3,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -135,7 +124,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 4,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -147,7 +135,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 5,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -159,7 +146,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 6,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -171,7 +157,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 7,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -183,7 +168,6 @@
     "description": {
       "color": "black",
       "name": "pawn",
-      "number": 8,
       "symbol": ""
     },
     "src": "/pieces/bp.png",
@@ -196,7 +180,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 1,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -208,7 +191,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 2,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -220,7 +202,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 3,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -232,7 +213,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 4,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -244,7 +224,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 5,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -256,7 +235,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 6,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -268,7 +246,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 7,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -280,7 +257,6 @@
     "description": {
       "color": "white",
       "name": "pawn",
-      "number": 8,
       "symbol": ""
     },
     "src": "/pieces/wp.png",
@@ -292,7 +268,6 @@
     "description": {
       "color": "white",
       "name": "rook",
-      "number": 1,
       "symbol": "R"
     },
     "src": "/pieces/wr.png",
@@ -304,7 +279,6 @@
     "description": {
       "color": "white",
       "name": "knight",
-      "number": 1,
       "symbol": "N"
     },
     "src": "/pieces/wn.png",
@@ -316,7 +290,6 @@
     "description": {
       "color": "white",
       "name": "bishop",
-      "number": 1,
       "symbol": "B"
     },
     "src": "/pieces/wb.png",
@@ -328,7 +301,6 @@
     "description": {
       "color": "white",
       "name": "queen",
-      "number": null,
       "symbol": "Q"
     },
     "src": "/pieces/wq.png",
@@ -340,7 +312,6 @@
     "description": {
       "color": "white",
       "name": "king",
-      "number": null,
       "symbol": "K"
     },
     "src": "/pieces/wk.png",
@@ -352,7 +323,6 @@
     "description": {
       "color": "white",
       "name": "bishop",
-      "number": 2,
       "symbol": "B"
     },
     "src": "/pieces/wb.png",
@@ -364,7 +334,6 @@
     "description": {
       "color": "white",
       "name": "knight",
-      "number": 2,
       "symbol": "N"
     },
     "src": "/pieces/wn.png",
@@ -376,7 +345,6 @@
     "description": {
       "color": "white",
       "name": "rook",
-      "number": 2,
       "symbol": "R"
     },
     "src": "/pieces/wr.png",

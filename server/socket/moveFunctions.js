@@ -56,10 +56,15 @@ const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
           const description = {
             name: "queen",
             symbol: "Q",
-            src: "/pieces/wq.png",
+            color,
           };
 
-          return { ...piece, position: move, description };
+          return {
+            ...piece,
+            position: move,
+            description,
+            src: "/pieces/wq.png",
+          };
         }
 
         return { ...piece, position: move };

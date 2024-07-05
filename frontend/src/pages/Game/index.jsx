@@ -1,18 +1,27 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Board from "./Board";
 import Pieces from "./Pieces";
 import { useUser } from "../../context/User";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSocket } from "../../context/Socket";
-import { usePieces } from "../../context/Pieces";
 
 const Game = () => {
+  const [result, setResult] = useState(null);
+
   const socket = useSocket();
   const { user, setUser } = useUser();
 
   const { roomId } = useParams();
 
   useEffect(() => {
+    socket.on("game-end", (winnerId) => {
+      localStorage.removeItem("ongoing-game");
+
+      const isWinner = winnerId === user.id;
+
+      setResult(isWinner ? "win" : "lose");
+    });
+
     if (user.isPlaying) {
       const onGoingGame = {
         roomId,
@@ -35,20 +44,60 @@ const Game = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="flex gap-5">
-        <div className="relative game">
-          <Board />
-          <Pieces />
-        </div>
+    <>
+      {result && (
+        <div className="fixed inset-0 z-20 flex justify-center items-center">
+          <div className="w-[400px] flex flex-col text-center rounded-md overflow-hidden">
+            <div
+              className={`text-[32px] text-white font-bold py-3 ${
+                result === "win" ? "bg-[#86A84F]" : "bg-[#666463]"
+              }`}
+            >
+              You {result === "win" ? "Won" : "Lost"}!
+            </div>
 
-        {/* <div>
+            <div className="bg-white p-5 flex flex-col gap-6">
+              <div className="flex flex-col">
+                <span className="uppercase font-semibold text-[15px] text-[#989795]">
+                  Your Rating
+                </span>
+                <span className="font-bold text-3xl">1240</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <button className="w-full h-[60px] bg-[#86A84F] text-xl font-bold rounded-lg text-white border-b-4 border-[#4A642C] col-span-2">
+                  Game Review
+                </button>
+                <Link
+                  to="/"
+                  className="w-full h-[60px] bg-[#D9D8D6] text-lg font-semibold rounded-lg text-[#61605f] border-b-4 border-[#989795] flex justify-center items-center"
+                >
+                  Home
+                </Link>
+                <button className="w-full h-[60px] bg-[#D9D8D6] text-lg font-semibold rounded-lg text-[#61605f] border-b-4 border-[#989795]">
+                  New Game
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="flex gap-5">
+          <div className="relative game">
+            <Board />
+            <Pieces />
+          </div>
+
+          {/* <div>
           <button onClick={reverseBoard}>
-            <img src="/icons/switch.svg" alt="switch" className="w-10" />
+          <img src="/icons/switch.svg" alt="switch" className="w-10" />
           </button>
-        </div> */}
+          </div> */}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
