@@ -16,9 +16,8 @@ app.use(
 
 const server = createServer(app);
 const io = new Server(server);
-initSocket(io);
 
-// io.on('connection', socket => socket.lea)
+initSocket(io);
 
 app.get("/", (req, res) => {
   return res.json({ msg: "Hello" });

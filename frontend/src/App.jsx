@@ -13,10 +13,12 @@ const App = () => {
   const { setUser } = useUser();
   const { setGame } = useGame();
 
+  // ! <TEMP>
   const location = useLocation();
   useEffect(() => {
     if (location.pathname !== "/") window.location.assign("/");
   }, []);
+  // ! </TEMP>
 
   useEffect(() => {
     setupListeners();
@@ -42,7 +44,7 @@ const App = () => {
         (player) => player.id === onGoingGame.playerId
       );
 
-      setGame({ turn: room.turn, pieces: room.pieces, opponent: "" });
+      setGame({ turn: room.turn, pieces: room.pieces, moves: room.moves });
       setUser({ ...player, boardSide: player.color, isPlaying: true });
       navigate(`/game/${room.id}`);
     });

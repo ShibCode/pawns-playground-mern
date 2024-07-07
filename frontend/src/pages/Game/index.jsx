@@ -4,12 +4,14 @@ import Pieces from "./Pieces";
 import { useUser } from "../../context/User";
 import { Link, useParams } from "react-router-dom";
 import { useSocket } from "../../context/Socket";
+import { useGame } from "../../context/Game";
 
 const Game = () => {
   const [result, setResult] = useState(null);
 
   const socket = useSocket();
   const { user, setUser } = useUser();
+  const { game, setGame } = useGame();
 
   const { roomId } = useParams();
 
@@ -22,13 +24,17 @@ const Game = () => {
       setResult(isWinner ? "win" : "lose");
     });
 
+    socket.on("receive-game-details", (pieces, turn) => {
+      setGame({ turn, pieces, moves: [] });
+    });
+
     if (user.isPlaying) {
       const onGoingGame = {
         roomId,
         playerId: user.id,
       };
 
-      localStorage.setItem("ongoing-game", JSON.stringify(onGoingGame));
+      // localStorage.setItem("ongoing-game", JSON.stringify(onGoingGame));
     } else socket.emit("spectate-game", roomId);
 
     return () => {
@@ -89,6 +95,16 @@ const Game = () => {
             <Board />
             <Pieces />
           </div>
+
+          {/* <div className="flex flex-col px-8 py-10 w-[360px]">
+            {game.moves.map((move, index) => (
+              <div key={index} className="flex text-white h-10 items-center">
+                <div className="w-full">{index + 1}.</div>
+                <div className="w-full">{move[0]}</div>
+                <div className="w-full">{move[1]}</div>
+              </div>
+            ))}
+          </div> */}
 
           {/* <div>
           <button onClick={reverseBoard}>

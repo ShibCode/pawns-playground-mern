@@ -16,10 +16,8 @@ const Home = () => {
   const { setUser } = useUser();
   const { setGame } = useGame();
 
-  const startGame = (players, roomId) => {
+  const startGame = (player, gameId) => {
     setIsInQueue(false);
-
-    const user = players.find((player) => player.id === socket.id);
 
     // getting default moves
     // ! Remove later
@@ -32,10 +30,10 @@ const Home = () => {
       return { ...piece, possibleMoves };
     });
 
-    setGame({ turn: "white", opponent: "", pieces });
-    setUser({ ...user, boardSide: user.color, isPlaying: true });
+    setGame({ turn: "white", pieces, moves: [] });
+    setUser({ ...player, boardSide: player.color, isPlaying: true });
 
-    navigate(`/game/${roomId}`);
+    navigate(`/game/${gameId}`);
   };
 
   useEffect(() => {
@@ -54,13 +52,7 @@ const Home = () => {
     };
   }, []);
 
-  useEffect(() => {
-    return () => console.log("asd");
-  }, [socket]);
-
-  const joinGameAndWait = () => {
-    socket.emit("join-game");
-  };
+  const joinGameAndWait = () => socket.emit("join-queue");
 
   return (
     <div className="flex justify-center items-center h-screen relative">

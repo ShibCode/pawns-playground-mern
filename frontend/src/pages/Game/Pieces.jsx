@@ -24,9 +24,9 @@ const Pieces = () => {
   }, [socket]);
 
   const setupListeners = () => {
-    socket.on("move-response", (pieces, turn, sound) => {
+    socket.on("move-response", (pieces, moves, turn, sound) => {
       setIsProcessing(false);
-      setGame((prev) => ({ ...prev, turn, pieces })); // changing turns after move response
+      setGame((prev) => ({ ...prev, turn, pieces, moves })); // changing turns after move response
 
       if (sound === "check") checkSound.play();
       else if (sound === "capture") captureSound.play();
@@ -39,8 +39,6 @@ const Pieces = () => {
   };
 
   const move = (e, pieceIndex, newPos = "") => {
-    console.log(pieceIndex);
-
     if (newPos === "") {
       const newPosStr = getComputedStyle(e.currentTarget).translate; // eg 0% -300%
 

@@ -1,4 +1,4 @@
-const generateMoves = require("../utils/generateMoves.js");
+const generateMoves = require("./generateMoves");
 
 const cumulatePossibleMoves = (pieces) => {
   return new Set(pieces.map((p) => p.possibleMoves).flat());
@@ -6,99 +6,70 @@ const cumulatePossibleMoves = (pieces) => {
 
 // moves the piece
 const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
-  let isCapture = false;
-
   let isKingSideCastle = false;
   let isQueenSideCastle = false;
-  let kingColor = "";
 
-  let newPieces = pieces
-    .map((piece, pieceIndex) => {
-      const { position, defaultPosition } = piece;
-      const { name, color } = piece.description;
+  const movedPiece = pieces.find((_, i) => i === movedPieceIndex);
+  const { position, defaultPosition } = movedPiece;
+  const { name, color } = movedPiece.description;
 
-      if (movedPieceIndex === pieceIndex) {
-        //Castling
-        if (name === "king") {
-          if (
-            (position === "e1" && move === "g1") ||
-            (position === "e8" && move === "g8")
-          ) {
-            isKingSideCastle = true;
-          } else if (
-            (position === "e1" && move === "c1") ||
-            (position === "e8" && move === "c8")
-          ) {
-            isQueenSideCastle = true;
-          }
+  // <Castling>
+  if (name === "king" && movedBy) {
+    if (position[0] === "e" && move[0] === "g") {
+      const rook = pieces.find(
+        (p) =>
+          p.description.name === "rook" &&
+          p.description.color === color &&
+          p.defaultPosition[0] === "h"
+      );
+      rook.position = `f${rook.position[1]}`;
 
-          kingColor = color;
+      isKingSideCastle = true;
+    } else if (position[0] === "e" && move[0] === "c") {
+      const rook = pieces.find(
+        (p) =>
+          p.description.name === "rook" &&
+          p.description.color === color &&
+          p.defaultPosition[0] === "a"
+      );
+      rook.position = `d${rook.position[1]}`;
+      isQueenSideCastle = true;
+    }
 
-          if (movedBy) {
-            movedBy.canCastleKingSide = false;
-            movedBy.canCastleQueenSide = false;
-          }
-        } else if (name === "rook" && movedBy) {
-          // if rook was moved, disallow the corresponding castling
-          if (defaultPosition === "a1" || defaultPosition === "a8")
-            movedBy.canCastleQueenSide = false;
-          else if (defaultPosition === "h1" || defaultPosition === "h8")
-            movedBy.canCastleKingSide = false;
-        }
+    movedBy.canCastleKingSide = false;
+    movedBy.canCastleQueenSide = false;
+  } else if (name === "rook" && movedBy) {
+    if (defaultPosition[0] === "a") movedBy.canCastleQueenSide = false;
+    else if (defaultPosition[0] === "h") movedBy.canCastleKingSide = false;
+  } // </Castling>
 
-        //Promotions
-        if (name !== "pawn" || !movedBy) return { ...piece, position: move };
+  // <Promotions>
+  if (name === "pawn" && movedBy) {
+    if (move[1] == 8 || move[1] == 1) {
+      const description = { name: "queen", symbol: "Q", color };
+      movedPiece.description = description;
+      movedPiece.src = `/pieces/wq.png`;
+    }
+  } // </Promotions>
 
-        if (
-          (color === "white" && move[1] == 8) ||
-          (color === "black" && move[1] == 1)
-        ) {
-          const description = {
-            name: "queen",
-            symbol: "Q",
-            color,
-          };
+  movedPiece.position = move; // Update the position of the piece
 
-          return {
-            ...piece,
-            position: move,
-            description,
-            src: "/pieces/wq.png",
-          };
-        }
+  let isCapture = false;
 
-        return { ...piece, position: move };
-      } else if (position === move) {
-        // if move took a piece
-        isCapture = true;
-        return false;
-      }
+  pieces = pieces.filter((piece, index) => {
+    if (piece.position !== move || index === movedPieceIndex) return true;
 
-      return piece;
-    })
-    .filter((a) => a); // removing the piece that may have been taken
+    isCapture = true;
+    return false;
+  }); // remove captured piece if any
 
-  // if move was castle, set rook position
-  if (isKingSideCastle || isQueenSideCastle) {
-    newPieces = newPieces.map((piece) => {
-      const { defaultPosition, position } = piece;
-      const { name, color } = piece.description;
-
-      // return any piece that isn't a rook or isn't of the same color as the castled king
-      if (name !== "rook" || color !== kingColor) return piece;
-
-      let newPos = position;
-
-      if (isKingSideCastle && defaultPosition === "h1") newPos = "f1";
-      else if (isQueenSideCastle && defaultPosition === "a1") newPos = "d1";
-      else if (isKingSideCastle && defaultPosition === "h8") newPos = "f8";
-      else if (isQueenSideCastle && defaultPosition === "a8") newPos = "d8";
-
-      return { ...piece, position: newPos };
-    });
-  }
-
-  return { pieces: newPieces, isCapture };
+  return {
+    pieces,
+    isCapture,
+    movedBy,
+    isKingSideCastle,
+    isQueenSideCastle,
+  };
 };
 
 const findCheck = (pieces, specificTeam = false) => {
