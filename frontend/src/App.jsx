@@ -1,17 +1,16 @@
 import React, { useEffect } from "react";
-import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { useSocket } from "./context/Socket";
 import Game from "./pages/Game";
 import Home from "./pages/Home";
 import { useUser } from "./context/User";
-import { useGame } from "./context/Game";
+import Loader from "./components/Loader";
 
 const App = () => {
   const navigate = useNavigate();
 
   const socket = useSocket();
-  const { setUser } = useUser();
-  const { setGame } = useGame();
+  const { user, setUser } = useUser();
 
   // ! <TEMP>
   // const location = useLocation();
@@ -19,6 +18,8 @@ const App = () => {
   //   if (location.pathname !== "/") window.location.assign("/");
   // }, []);
   // ! </TEMP>
+
+  // localStorage.clear();
 
   useEffect(() => {
     setupListeners();
@@ -28,35 +29,41 @@ const App = () => {
   const setupListeners = () => {
     if (!socket) return;
 
-    const onGoingGame = JSON.parse(localStorage.getItem("ongoing-game"));
-    if (onGoingGame) {
-      socket.emit(
-        "request-continue-game",
-        onGoingGame.gameId,
-        onGoingGame.playerId
-      );
-    }
+    const pendingGame = JSON.parse(localStorage.getItem("ongoing-game"));
 
     socket.on("redirect-home", () => navigate("/"));
 
-    socket.on("response-continue-game", (game) => {
-      const player = game?.players.find(
-        (player) => player.id === onGoingGame.playerId
-      );
-
-      setGame({ turn: game.turn, pieces: game.pieces, moves: game.moves });
-      setUser({ ...player, boardSide: player.color, isPlaying: true });
-      navigate(`/game/${game.id}`);
+    socket.on("res-user-details", (id) => {
+      if (pendingGame) {
+        setUser({
+          ...pendingGame.player,
+          id, // set the new id instead of the previous socket id
+          boardSide: pendingGame.player?.color,
+          isPlaying: true,
+        });
+        navigate(`/game/${pendingGame.gameId}`); // connecting to a pending game
+      } else {
+        setUser({ id, boardSide: "white", isPlaying: false, color: "" });
+      }
     });
+    socket.emit("req-user-details");
   };
 
   const removeListeners = () => {
     if (!socket) return;
+    socket.off("get-user-details");
     socket.off("redirect-home");
-    socket.off("response-continue-game");
   };
 
-  if (!socket) return;
+  if (!socket || !user)
+    return (
+      <div className="w-full min-h-screen flex justify-center items-center flex-col gap-4">
+        <Loader size={48} />
+        <span className="text-xl text-gray-200">
+          It may take a while for the server to load up...
+        </span>
+      </div>
+    );
 
   return (
     <Routes>

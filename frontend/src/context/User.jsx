@@ -7,12 +7,13 @@ const UserContext = createContext();
 export const useUser = () => useContext(UserContext);
 
 const User = ({ children }) => {
-  const [user, setUser] = useState({
-    id: "",
-    color: "",
-    boardSide: "white",
-    isPlaying: false,
-  });
+  const [user, setUser] = useState(null);
+  // {
+  //   id: "",
+  //   boardSide: "white",
+  //   isPlaying: false,
+  //   color: "",
+  // }
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

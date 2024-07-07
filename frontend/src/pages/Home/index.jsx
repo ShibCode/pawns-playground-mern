@@ -18,16 +18,16 @@ const Home = () => {
   };
 
   useEffect(() => {
-    socket.on("start-game", startGame);
     socket.on("joined-queue", () => setIsInQueue(true));
-    socket.on("response-get-ongoing-games", (games) => setOnGoingGames(games));
+    socket.on("start-game", startGame);
 
-    socket.emit("request-get-ongoing-games");
+    socket.on("res-get-ongoing-games", (games) => setOnGoingGames(games));
+    socket.emit("req-get-ongoing-games");
 
     return () => {
-      socket.off("start-game");
       socket.off("joined-queue");
-      socket.off("receive-ongoing-games");
+      socket.off("start-game");
+      socket.off("res-get-ongoing-games");
     };
   }, []);
 

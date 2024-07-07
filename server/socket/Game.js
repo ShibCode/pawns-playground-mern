@@ -30,6 +30,10 @@ class Game {
   }
 
   move(io, pieceIndex, newPosition) {
+    const movedPiece = this.pieces.find((_, i) => i === pieceIndex);
+
+    if (movedPiece.description.color !== this.turn) return;
+
     const white = this.player1.color === "white" ? this.player1 : this.player2;
     const black = this.player1.color === "black" ? this.player1 : this.player2;
 
@@ -115,10 +119,10 @@ class Game {
       );
 
       // removes all players from the game and deletes the game
-      io.sockets.sockets.get(white.id).leave(this.id);
-      io.sockets.sockets.get(black.id).leave(this.id);
+      io.sockets.sockets.get(this.player1.id).leave(this.id);
+      io.sockets.sockets.get(this.player2.id).leave(this.id);
 
-      return false;
+      return true;
     }
 
     if (this.turn === this.player1.color) this.player1 = movedBy;
@@ -126,6 +130,8 @@ class Game {
 
     this.pieces = pieces;
     this.turn = newTurn;
+
+    return false;
   }
 
   getMoveNotation(

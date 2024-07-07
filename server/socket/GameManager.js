@@ -22,11 +22,16 @@ class GameManager {
   }
 
   addHandler(socket) {
+    socket.on("req-user-details", () => {
+      socket.emit("res-user-details", socket.id);
+    });
+
+    socket.on("disconnect", () => this.removeUser(socket));
     socket.on("join-queue", () => this.joinQueue(socket));
     socket.on("move-request", this.move);
-    socket.on("request-get-ongoing-games", () => this.sendGames(socket));
-    socket.on("request-connect-to-game", (gameId) =>
-      this.connectToGame(socket, gameId)
+    socket.on("req-get-ongoing-games", () => this.sendGames(socket));
+    socket.on("request-connect-to-game", (gameId, userId = null) =>
+      this.connectToGame(socket, gameId, userId)
     );
   }
 
@@ -55,20 +60,40 @@ class GameManager {
 
   move(gameId, pieceIndex, newPosition) {
     const game = this.games.find((game) => game.id === gameId);
-    if (game) game.move(this.io, pieceIndex, newPosition);
+    if (game) {
+      const isGameOver = game.move(this.io, pieceIndex, newPosition);
+      if (isGameOver) {
+        this.games = this.games.filter((g) => g.id !== gameId);
+        this.sendGames(this.io);
+      }
+    }
   }
 
   // when user comes to the link of a game including the players
-  connectToGame(socket, gameId) {
+  connectToGame(socket, gameId, userId = null) {
     const game = this.games.find((game) => game.id === gameId);
     if (game) {
-      socket.join(gameId); // join the room of the game
-      socket.emit("response-connect-to-game", game); // send the game data to the user
+      if (userId) {
+        // if the user is one of the players
+        if (game.player1.id === userId || game.player2.id === userId) {
+          socket.join(gameId); // join the room of the game
+          socket.emit("response-connect-to-game", game); // send the game data to the user
+
+          // set player id to the new id
+          if (game.player1.id === userId) game.player1.id = socket.id;
+          else game.player2.id = socket.id;
+        } else {
+          socket.emit("redirect-home"); // redirect to home if the user is not one of the players
+        }
+      } else {
+        socket.join(gameId); // join the room of the game
+        socket.emit("response-connect-to-game", game); // send the game data to the user
+      }
     }
   }
 
   sendGames(socketOrIo) {
-    socketOrIo.emit("response-get-ongoing-games", this.games);
+    socketOrIo.emit("res-get-ongoing-games", this.games);
   }
 }
 

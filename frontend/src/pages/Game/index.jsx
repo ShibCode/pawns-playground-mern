@@ -22,25 +22,23 @@ const Game = () => {
       setResult(isWinner ? "win" : "lose");
     });
 
-    socket.on("receive-game-details", (pieces, turn) => {
-      setGame({ turn, pieces, moves: [] });
+    const pendingGame = JSON.parse(localStorage.getItem("ongoing-game"));
+
+    socket.on("response-connect-to-game", (game) => {
+      if (user?.isPlaying) {
+        const ongoingGame = { gameId: gameId, player: user };
+        localStorage.setItem("ongoing-game", JSON.stringify(ongoingGame));
+      } // if the user is not a spectator, then save the game to local storage
+
+      setGame(game);
     });
 
-    socket.on("response-connect-to-game", (game) => setGame(game));
-    socket.emit("request-connect-to-game", gameId);
-
-    if (user.isPlaying) {
-      const onGoingGame = {
-        gameId,
-        playerId: user.id,
-      };
-
-      // localStorage.setItem("ongoing-game", JSON.stringify(onGoingGame));
-    } else socket.emit("spectate-game", gameId);
-
-    return () => {
-      if (!user.isPlaying) socket.emit("stop-spectate-game", gameId);
-    };
+    // here, if there is a pending game, it passes the previous player id that was saved in the local storage and in the server, the player id in the game is updated with the new id
+    socket.emit(
+      "request-connect-to-game",
+      gameId,
+      pendingGame ? pendingGame.player.id : user.id
+    );
   }, []);
 
   const reverseBoard = () => {
