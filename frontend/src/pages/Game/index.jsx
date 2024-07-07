@@ -13,14 +13,12 @@ const Game = () => {
   const { user, setUser } = useUser();
   const { game, setGame } = useGame();
 
-  const { roomId } = useParams();
+  const { gameId } = useParams();
 
   useEffect(() => {
     socket.on("game-end", (winnerId) => {
       localStorage.removeItem("ongoing-game");
-
       const isWinner = winnerId === user.id;
-
       setResult(isWinner ? "win" : "lose");
     });
 
@@ -28,17 +26,20 @@ const Game = () => {
       setGame({ turn, pieces, moves: [] });
     });
 
+    socket.on("response-connect-to-game", (game) => setGame(game));
+    socket.emit("request-connect-to-game", gameId);
+
     if (user.isPlaying) {
       const onGoingGame = {
-        roomId,
+        gameId,
         playerId: user.id,
       };
 
       // localStorage.setItem("ongoing-game", JSON.stringify(onGoingGame));
-    } else socket.emit("spectate-game", roomId);
+    } else socket.emit("spectate-game", gameId);
 
     return () => {
-      if (!user.isPlaying) socket.emit("stop-spectate-game", roomId);
+      if (!user.isPlaying) socket.emit("stop-spectate-game", gameId);
     };
   }, []);
 
@@ -48,6 +49,8 @@ const Game = () => {
       side: prev.boardSide === "white" ? "black" : "white",
     }));
   };
+
+  if (!game) return;
 
   return (
     <>

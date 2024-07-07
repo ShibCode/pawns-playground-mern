@@ -16,7 +16,7 @@ const Pieces = () => {
   const { user } = useUser();
   const socket = useSocket();
 
-  const { roomId } = useParams();
+  const { gameId } = useParams();
 
   useEffect(() => {
     setupListeners();
@@ -58,7 +58,7 @@ const Pieces = () => {
       turn: prev.turn === "white" ? "black" : "white",
     })); // changing turns before move request
 
-    socket.emit("move-request", roomId, pieceIndex, newPos);
+    socket.emit("move-request", gameId, pieceIndex, newPos);
   };
 
   return (

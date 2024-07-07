@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSocket } from "../../context/Socket";
 import { useUser } from "../../context/User";
 import { Link, useNavigate } from "react-router-dom";
-import { useGame } from "../../context/Game";
-import defaultPieces from "../../data/defaultPieces.json";
-import generateMoves from "../Game/generateMoves";
 
 const Home = () => {
   const [isInQueue, setIsInQueue] = useState(false);
@@ -14,36 +11,18 @@ const Home = () => {
 
   const socket = useSocket();
   const { setUser } = useUser();
-  const { setGame } = useGame();
 
   const startGame = (player, gameId) => {
-    setIsInQueue(false);
-
-    // getting default moves
-    // ! Remove later
-    const pieces = defaultPieces.map((piece) => {
-      const { position, defaultPosition } = piece;
-      const { color, name } = piece.description;
-
-      const parameters = [defaultPieces, position, color, defaultPosition];
-      const possibleMoves = generateMoves[name](...parameters); // e.g generateMoves[pawn](parameters)
-      return { ...piece, possibleMoves };
-    });
-
-    setGame({ turn: "white", pieces, moves: [] });
     setUser({ ...player, boardSide: player.color, isPlaying: true });
-
     navigate(`/game/${gameId}`);
   };
 
   useEffect(() => {
     socket.on("start-game", startGame);
     socket.on("joined-queue", () => setIsInQueue(true));
-    socket.on("receive-ongoing-games", (games) => {
-      setOnGoingGames(games);
-    });
+    socket.on("response-get-ongoing-games", (games) => setOnGoingGames(games));
 
-    socket.emit("request-ongoing-games");
+    socket.emit("request-get-ongoing-games");
 
     return () => {
       socket.off("start-game");

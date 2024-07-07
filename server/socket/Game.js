@@ -1,4 +1,4 @@
-const defaultPieces = require("../data/defaultPieces.json");
+const getDefaultPieces = require("../utils/getDefaultPieces.js");
 const {
   updatePosition,
   findCheck,
@@ -24,7 +24,7 @@ class Game {
       canCastleQueenSide: true,
     };
 
-    this.pieces = defaultPieces;
+    this.pieces = getDefaultPieces();
     this.moves = [];
     this.turn = "white";
   }

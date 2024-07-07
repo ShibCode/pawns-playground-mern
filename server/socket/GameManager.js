@@ -22,36 +22,53 @@ class GameManager {
   }
 
   addHandler(socket) {
-    socket.on("disconnect", () => this.removeUser(socket));
     socket.on("join-queue", () => this.joinQueue(socket));
     socket.on("move-request", this.move);
+    socket.on("request-get-ongoing-games", () => this.sendGames(socket));
+    socket.on("request-connect-to-game", (gameId) =>
+      this.connectToGame(socket, gameId)
+    );
   }
 
   joinQueue(socket) {
     if (this.waitingToBeConnected) {
-      this.startGame(this.waitingToBeConnected, socket);
+      //start a game
+      const gameId = uuidv4();
+
+      const p1 = this.waitingToBeConnected;
+      const p2 = socket;
+
+      const game = new Game(gameId, p1.id, p2.id); // create a new game
+      this.games.push(game);
+
+      p1.emit("start-game", game.player1, game.id);
+      p2.emit("start-game", game.player2, game.id);
+
+      this.sendGames(this.io); // send ongoing games to all users
+
+      this.waitingToBeConnected = null; // remove from queue
     } else {
-      this.waitingToBeConnected = socket;
-      socket.emit("joined-queue");
+      this.waitingToBeConnected = socket; // add to queue
+      socket.emit("joined-queue"); // notify user that they are in queue
     }
-  }
-
-  startGame(p1, p2) {
-    const gameId = uuidv4();
-    const game = new Game(gameId, p1.id, p2.id);
-    this.games.push(game);
-
-    [p1, p2].forEach((player, i) => {
-      player.join(gameId);
-      player.emit("start-game", game[`player${i + 1}`], gameId);
-    });
-
-    this.waitingToBeConnected = null;
   }
 
   move(gameId, pieceIndex, newPosition) {
     const game = this.games.find((game) => game.id === gameId);
     if (game) game.move(this.io, pieceIndex, newPosition);
+  }
+
+  // when user comes to the link of a game including the players
+  connectToGame(socket, gameId) {
+    const game = this.games.find((game) => game.id === gameId);
+    if (game) {
+      socket.join(gameId); // join the room of the game
+      socket.emit("response-connect-to-game", game); // send the game data to the user
+    }
+  }
+
+  sendGames(socketOrIo) {
+    socketOrIo.emit("response-get-ongoing-games", this.games);
   }
 }
 

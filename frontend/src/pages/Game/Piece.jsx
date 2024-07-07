@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useGame } from "../../context/Game";
 import tilePosition from "../../data/tilesPosition.json";
 import { useUser } from "../../context/User";
@@ -22,18 +22,39 @@ const Piece = ({
   const { game } = useGame();
   const { user } = useUser();
 
-  const handleDrag = () => {
+  const [dragPos, setDragPos] = useState({ x: null, y: null });
+
+  const handleDrag = (_, data) => {
     if (clickedPiece !== index) setClickedPiece(index);
+
+    const tileSize = window.innerHeight / 8;
+
+    const translateX = Math.round(data.x / tileSize) * 100;
+    const translateY = Math.round(data.y / tileSize) * 100;
+
+    if (user.boardSide === "white") {
+      setDragPos({
+        x: `${translateX + +x.substring(0, x.length - 1)}%`,
+        y: `${translateY + +y.substring(0, y.length - 1)}%`,
+      });
+    } else {
+      setDragPos({
+        x: `${-translateX + +x.substring(0, x.length - 1)}%`,
+        y: `${-translateY + +y.substring(0, y.length - 1)}%`,
+      });
+    }
   };
 
   const handleDragStop = (_, data) => {
+    setDragPos({ x: null, y: null });
+
     const tileSize = window.innerHeight / 8;
 
     const translateX = Math.round(data.x / tileSize);
     const translateY = -Math.round(data.y / tileSize);
 
     const newPos =
-      user.color === "white"
+      user.boardSide === "white"
         ? incrementPosition(position, [translateX, translateY])
         : incrementPosition(position, [-translateX, -translateY]);
 
@@ -49,6 +70,13 @@ const Piece = ({
 
   return (
     <>
+      {dragPos.x && (
+        <div
+          className="absolute w-tile h-tile bottom-0 left-0 border-[calc(var(--tile-size)*0.075)] border-gray-200 -z-10"
+          style={{ translate: `${dragPos.x} ${dragPos.y}` }}
+        ></div>
+      )}
+
       <div
         style={{ translate: `${x} ${y}` }}
         className={`w-tile h-tile absolute bottom-0 left-0 bg-tile-picked ${
