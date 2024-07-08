@@ -56,6 +56,8 @@ const getDefaultPieces = () => {
       position: "e8",
       defaultPosition: "e8",
       possibleMoves: [],
+      canCastleKingSide: true,
+      canCastleQueenSide: true,
     },
     {
       description: {
@@ -321,6 +323,8 @@ const getDefaultPieces = () => {
       position: "e1",
       defaultPosition: "e1",
       possibleMoves: [],
+      canCastleKingSide: true,
+      canCastleQueenSide: true,
     },
     {
       description: {

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useSocket } from "./context/Socket";
 import Game from "./pages/Game";
 import Home from "./pages/Home";
@@ -19,7 +19,7 @@ const App = () => {
   // }, []);
   // ! </TEMP>
 
-  // localStorage.clear();
+  localStorage.clear();
 
   useEffect(() => {
     setupListeners();

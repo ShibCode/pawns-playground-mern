@@ -5,17 +5,19 @@ const cumulatePossibleMoves = (pieces) => {
 };
 
 // moves the piece
-const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
-  let isKingSideCastle = false;
-  let isQueenSideCastle = false;
+const updatePosition = (pieces, movedPiece, move, isPlayerMove = null) => {
+  // isPlayerMove is a thing because the server is also moving pieces to filter out moves after this function is called [adjustForChecks()]
 
-  const movedPiece = pieces.find((_, i) => i === movedPieceIndex);
-  const { position, defaultPosition } = movedPiece;
+  const { defaultPosition } = movedPiece;
   const { name, color } = movedPiece.description;
 
+  const hisKing = pieces.find(
+    (p) => p.description.name === "king" && p.description.color === color
+  );
+
   // <Castling>
-  if (name === "king" && movedBy) {
-    if (position[0] === "e" && move[0] === "g") {
+  if (name === "king" && isPlayerMove) {
+    if (movedPiece.canCastleKingSide && move[0] === "g") {
       const rook = pieces.find(
         (p) =>
           p.description.name === "rook" &&
@@ -23,9 +25,7 @@ const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
           p.defaultPosition[0] === "h"
       );
       rook.position = `f${rook.position[1]}`;
-
-      isKingSideCastle = true;
-    } else if (position[0] === "e" && move[0] === "c") {
+    } else if (movedPiece.canCastleQueenSide && move[0] === "c") {
       const rook = pieces.find(
         (p) =>
           p.description.name === "rook" &&
@@ -33,18 +33,17 @@ const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
           p.defaultPosition[0] === "a"
       );
       rook.position = `d${rook.position[1]}`;
-      isQueenSideCastle = true;
     }
 
-    movedBy.canCastleKingSide = false;
-    movedBy.canCastleQueenSide = false;
-  } else if (name === "rook" && movedBy) {
-    if (defaultPosition[0] === "a") movedBy.canCastleQueenSide = false;
-    else if (defaultPosition[0] === "h") movedBy.canCastleKingSide = false;
+    movedPiece.canCastleKingSide = false;
+    movedPiece.canCastleQueenSide = false;
+  } else if (name === "rook" && isPlayerMove) {
+    if (defaultPosition[0] === "a") hisKing.canCastleQueenSide = false;
+    else if (defaultPosition[0] === "h") hisKing.canCastleKingSide = false;
   } // </Castling>
 
   // <Promotions>
-  if (name === "pawn" && movedBy) {
+  if (name === "pawn" && isPlayerMove) {
     if (move[1] == 8 || move[1] == 1) {
       const description = { name: "queen", symbol: "Q", color };
       movedPiece.description = description;
@@ -56,20 +55,14 @@ const updatePosition = (pieces, movedPieceIndex, move, movedBy = null) => {
 
   let isCapture = false;
 
-  pieces = pieces.filter((piece, index) => {
-    if (piece.position !== move || index === movedPieceIndex) return true;
+  pieces = pieces.filter((piece) => {
+    if (piece.position !== move || piece === movedPiece) return true;
 
     isCapture = true;
     return false;
   }); // remove captured piece if any
 
-  return {
-    pieces,
-    isCapture,
-    movedBy,
-    isKingSideCastle,
-    isQueenSideCastle,
-  };
+  return { pieces, isCapture };
 };
 
 const findCheck = (pieces, specificTeam = false) => {
@@ -90,7 +83,7 @@ const findCheck = (pieces, specificTeam = false) => {
 };
 
 // update possible moves for pieces
-const updatePossibleMoves = (pieces, castles) => {
+const updatePossibleMoves = (pieces) => {
   const newPieces = pieces.map((piece) => {
     const { position, defaultPosition } = piece;
     const { color, name } = piece.description;
@@ -98,8 +91,8 @@ const updatePossibleMoves = (pieces, castles) => {
     const parameters = [pieces, position, color];
     if (name === "pawn") parameters.push(defaultPosition);
     else if (name === "king") {
-      parameters.push(castles[color].canCastleKingSide);
-      parameters.push(castles[color].canCastleQueenSide);
+      parameters.push(piece.canCastleKingSide);
+      parameters.push(piece.canCastleQueenSide);
     }
 
     const possibleMoves = generateMoves[name](...parameters); // e.g generateMoves[pawn](parameters)
@@ -111,22 +104,23 @@ const updatePossibleMoves = (pieces, castles) => {
 };
 
 // adjusts for pins, moving into checks and filtering moves after getting checked
-const adjustForChecks = (pieces, turn, castle) => {
-  return pieces.map((piece, index) => {
+const adjustForChecks = (pieces, turn) => {
+  return pieces.map((piece) => {
     const { color, name } = piece.description;
 
     if (color === turn) return piece;
 
-    let canCastleKingSide = castle[color].canCastleKingSide;
-    let canCastleQueenSide = castle[color].canCastleQueenSide;
+    let canCastleKingSide = piece.canCastleKingSide;
+    let canCastleQueenSide = piece.canCastleQueenSide;
 
     let newPossibleMoves = piece.possibleMoves.filter((move) => {
       const originalPosition = piece.position;
 
-      const { pieces: newPieces1 } = updatePosition(pieces, index, move); // imaginary movement of piece
-      const newPieces2 = updatePossibleMoves(newPieces1, castle);
+      const { pieces: newPieces1 } = updatePosition(pieces, piece, move); // imaginary movement of piece
+      const newPieces2 = updatePossibleMoves(newPieces1);
       const getsChecked = findCheck(newPieces2, color); // finds if piece's king is now checked
 
+      // disable castling if the tile through which the king passes ,when castling, is attacked
       if (
         name === "king" &&
         (move === "d1" || move === "d8") &&

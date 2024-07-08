@@ -16,13 +16,8 @@ const Socket = ({ children }) => {
 
     const socket = io(url, { transports: ["websocket"] });
 
-    socket.on("connect", () => {
-      setSocket(socket);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
+    socket.on("connect", () => setSocket(socket));
+    return () => socket.disconnect();
   }, []);
 
   return (

@@ -6,88 +6,69 @@ const {
   adjustForChecks,
 } = require("../utils/moveFunctions.js");
 
+// TODO: FIX getMoveNotation(), Nf3 is returning Ngf3. Also add promotion!
+// TODO: Add En passant
+// TODO: Stalemate
+//TODO: Sound effects for castle and promotion
+//TODO: Ability for user to choose promotion
+// TODO: Add time control
+
 class Game {
   constructor(id, player1Id, player2Id) {
     const isWhite = Math.random() > 0.5;
 
     this.id = id;
-    this.player1 = {
-      id: player1Id,
-      color: isWhite ? "white" : "black",
-      canCastleKingSide: true,
-      canCastleQueenSide: true,
-    };
-    this.player2 = {
-      id: player2Id,
-      color: isWhite ? "black" : "white",
-      canCastleKingSide: true,
-      canCastleQueenSide: true,
-    };
+    this.player1 = { id: player1Id, color: isWhite ? "white" : "black" };
+    this.player2 = { id: player2Id, color: isWhite ? "black" : "white" };
 
     this.pieces = getDefaultPieces();
     this.moves = [];
     this.turn = "white";
   }
 
-  move(io, pieceIndex, newPosition) {
+  move(io, socket, pieceIndex, move) {
+    const { player1, player2 } = this;
+
     const movedPiece = this.pieces.find((_, i) => i === pieceIndex);
+    const playerWithTurn = player1.color === this.turn ? player1 : player2;
 
-    if (movedPiece.description.color !== this.turn) return;
+    if (playerWithTurn.id !== socket.id) return; // check if it's the player's turn
+    if (!movedPiece.possibleMoves.includes(move)) {
+      socket.emit("reverse-invalid-move", this);
+      return;
+    } // check if the move is valid
 
-    const white = this.player1.color === "white" ? this.player1 : this.player2;
-    const black = this.player1.color === "black" ? this.player1 : this.player2;
+    const movedPieceBeforeUpdate = { ...movedPiece };
 
-    const castle = {
-      white: {
-        canCastleKingSide: white.canCastleKingSide,
-        canCastleQueenSide: white.canCastleQueenSide,
-      },
-      black: {
-        canCastleKingSide: black.canCastleKingSide,
-        canCastleQueenSide: black.canCastleQueenSide,
-      },
-    };
+    let { pieces, isCapture } = updatePosition(
+      this.pieces,
+      movedPiece,
+      move,
+      true
+    );
 
-    let { pieces, isCapture, movedBy, isKingSideCastle, isQueenSideCastle } =
-      updatePosition(
-        this.pieces,
-        pieceIndex,
-        newPosition,
-        this.turn === "white" ? white : black
-      );
-
-    pieces = updatePossibleMoves(pieces, castle);
+    pieces = updatePossibleMoves(pieces);
     const checkedTeam = findCheck(pieces);
 
     // disable castling if king is checked
     if (checkedTeam) {
-      pieces = pieces.map((piece) => {
-        const { position, possibleMoves } = piece;
-        const { name, color } = piece.description;
+      const king = pieces.find(
+        ({ description }) =>
+          description.name === "king" && description.color === checkedTeam
+      );
 
-        if (name !== "king" || color !== checkedTeam) return piece;
-        if (position !== "e1" || position !== "e8") return piece;
-
-        const newMoves = possibleMoves.filter((move) => {
-          return !(
-            move === "g1" ||
-            move === "c1" ||
-            move === "g8" ||
-            move === "c8"
-          );
-        });
-
-        return { ...piece, possibleMoves: newMoves };
-      });
+      if (king.canCastleKingSide || king.canCastleQueenSide) {
+        king.possibleMoves = king.possibleMoves.filter(
+          (move) => move[0] !== "g" && move[0] !== "c"
+        );
+      }
     }
 
-    pieces = adjustForChecks(pieces, this.turn, castle);
+    pieces = adjustForChecks(pieces, this.turn);
 
     let sound = "move";
     if (checkedTeam) sound = "check";
     else if (isCapture) sound = "capture";
-
-    const newTurn = this.turn === "white" ? "black" : "white";
 
     const hasNoMoves =
       pieces
@@ -97,10 +78,8 @@ class Game {
     const isCheckmate = checkedTeam && hasNoMoves;
 
     const moveNotation = this.getMoveNotation(
-      pieceIndex,
-      newPosition,
-      isKingSideCastle,
-      isQueenSideCastle,
+      movedPieceBeforeUpdate,
+      move,
       checkedTeam,
       isCheckmate,
       isCapture
@@ -110,23 +89,20 @@ class Game {
       this.moves.push([moveNotation]); // add a new move if it's white's turn
     else this.moves[this.moves.length - 1].push(moveNotation); // add to an existing move if it's black's turn
 
+    const newTurn = this.turn === "white" ? "black" : "white";
+
     io.to(this.id).emit("move-response", pieces, this.moves, newTurn, sound);
 
     if (checkedTeam && hasNoMoves) {
-      io.to(this.id).emit(
-        "game-end",
-        checkedTeam === "black" ? white.id : black.id
-      );
+      const winnerId = player1.color === turn ? player1.id : player2.id;
+      io.to(this.id).emit("game-end", winnerId);
 
       // removes all players from the game and deletes the game
-      io.sockets.sockets.get(this.player1.id).leave(this.id);
-      io.sockets.sockets.get(this.player2.id).leave(this.id);
+      io.sockets.sockets.get(player1.id).leave(this.id);
+      io.sockets.sockets.get(player2.id).leave(this.id);
 
       return true;
     }
-
-    if (this.turn === this.player1.color) this.player1 = movedBy;
-    else this.player2 = movedBy;
 
     this.pieces = pieces;
     this.turn = newTurn;
@@ -134,54 +110,50 @@ class Game {
     return false;
   }
 
-  getMoveNotation(
-    pieceIndex,
-    newPosition,
-    isKingSideCastle,
-    isQueenSideCastle,
-    isCheck,
-    isCheckmate,
-    isCapture
-  ) {
-    const { position: oldPos, description } = this.pieces.find(
-      (_, i) => i === pieceIndex
-    );
-    const { symbol, name, color } = description;
+  getMoveNotation(movedPiece, newPos, isCheck, isCheckmate, isCapture) {
+    // movedPiece is before update
 
-    let moveNotation = `${symbol}${newPosition}`;
+    const oldPos = movedPiece.position;
+    const { symbol, name, color } = movedPiece.description;
 
-    if (isKingSideCastle) moveNotation = "O-O";
-    else if (isQueenSideCastle) moveNotation = "O-O-O";
+    let moveNotation = `${symbol}${newPos}`;
+
+    const castleCondition = name === "king" && oldPos[0] === "e";
+
+    if (castleCondition && newPos[0] === "g") moveNotation = "O-O";
+    else if (castleCondition && newPos[0] === "c") moveNotation = "O-O-O";
     else {
       // get other moves that are of the same name and same color but not this one
       const sharedBy = this.pieces
         .filter(
-          (p, i) =>
-            p.description.name === name &&
-            p.description.color === color &&
-            i !== pieceIndex
+          (piece) =>
+            piece.description.name === name && // same type of piece eg knight
+            piece.description.color === color && // same color
+            piece !== movedPiece // howerver, not the moved piece
         )
-        .find((p) => p.possibleMoves.includes(newPosition));
+        .find((p) => p.possibleMoves.includes(newPos));
 
       let oldPosNotation = oldPos[0]; // default to the file of the old position if move is shared by similar piece eg Nce5
 
       if (name !== "pawn" && sharedBy) {
         if (oldPos[0] === sharedBy.position[0]) oldPosNotation = oldPos[1]; // if the file is the same, use the rank instead eg N4e5
 
-        moveNotation = `${symbol}${oldPosNotation}${newPosition}`;
+        moveNotation = `${symbol}${oldPosNotation}${newPos}`;
       }
 
       if (isCapture && name === "pawn") {
-        moveNotation = `${oldPos[0]}x${newPosition}`;
+        moveNotation = `${oldPos[0]}x${newPos}`;
       } else if (isCapture) {
         moveNotation = sharedBy
-          ? `${symbol}${oldPosNotation}x${newPosition}`
-          : `${symbol}x${newPosition}`;
+          ? `${symbol}${oldPosNotation}x${newPos}`
+          : `${symbol}x${newPos}`;
       }
     }
 
     if (isCheckmate) moveNotation = moveNotation + "#";
     else if (isCheck) moveNotation = moveNotation + "+";
+
+    return moveNotation;
   }
 }
 

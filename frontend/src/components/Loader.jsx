@@ -4,7 +4,7 @@ const Loader = ({ size }) => {
   return (
     <div role="status">
       <svg
-        ariaHidden="true"
+        aria-hidden="true"
         width={size}
         height={size}
         className="inline text-gray-200 animate-spin dark:text-gray-600 fill-gray-600 dark:fill-gray-300"

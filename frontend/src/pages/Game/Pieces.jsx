@@ -32,10 +32,15 @@ const Pieces = () => {
       else if (sound === "capture") captureSound.play();
       else moveSound.play();
     });
+    socket.on("reverse-invalid-move", (game) => {
+      setGame(game);
+      setIsProcessing(false);
+    }); // if the move is invalid, reverse the game state
   };
 
   const removeListeners = () => {
     socket.off("move-response");
+    socket.off("reverse-invalid-move");
   };
 
   const move = (e, pieceIndex, newPos = "") => {

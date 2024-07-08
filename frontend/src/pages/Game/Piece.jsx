@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useGame } from "../../context/Game";
 import tilePosition from "../../data/tilesPosition.json";
 import { useUser } from "../../context/User";
