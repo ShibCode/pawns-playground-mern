@@ -6,24 +6,31 @@ const {
   adjustForChecks,
 } = require("../utils/moveFunctions.js");
 
-// TODO: FIX getMoveNotation(), Nf3 is returning Ngf3. Also add promotion!
+// TODO: Ability for user to choose promotion
+// TODO: allow user to go to previous positions to view
 // TODO: Add En passant
-// TODO: Stalemate
-//TODO: Sound effects for castle and promotion
-//TODO: Ability for user to choose promotion
-// TODO: Add time control
+// TODO: Refactor
 
 class Game {
   constructor(id, player1Id, player2Id) {
     const isWhite = Math.random() > 0.5;
 
     this.id = id;
-    this.player1 = { id: player1Id, color: isWhite ? "white" : "black" };
-    this.player2 = { id: player2Id, color: isWhite ? "black" : "white" };
+    this.player1 = {
+      id: player1Id,
+      color: isWhite ? "white" : "black",
+      timeLeft: 10 * 60 * 1000,
+    };
+    this.player2 = {
+      id: player2Id,
+      color: isWhite ? "black" : "white",
+      timeLeft: 10 * 60 * 1000,
+    };
 
     this.pieces = getDefaultPieces();
     this.moves = [];
     this.turn = "white";
+    this.lastUpdatedAt = null;
   }
 
   move(io, socket, pieceIndex, move) {
@@ -34,11 +41,17 @@ class Game {
 
     if (playerWithTurn.id !== socket.id) return; // check if it's the player's turn
     if (!movedPiece.possibleMoves.includes(move)) {
-      socket.emit("reverse-invalid-move", this);
+      socket.emit("reverse-invalid-action", this);
       return;
     } // check if the move is valid
 
-    const movedPieceBeforeUpdate = { ...movedPiece };
+    // deducting the time left for the player who moved (except for first move of white)
+    if (this.lastUpdatedAt) {
+      playerWithTurn.timeLeft -= Date.now() - this.lastUpdatedAt;
+      this.lastUpdatedAt = Date.now();
+    }
+
+    const movedPieceBefore = { ...movedPiece };
 
     let { pieces, isCapture } = updatePosition(
       this.pieces,
@@ -66,20 +79,32 @@ class Game {
 
     pieces = adjustForChecks(pieces, this.turn);
 
+    const isCastle =
+      movedPiece.description.name === "king" &&
+      movedPieceBefore.position[0] === "e" &&
+      (move[0] === "g" || move[0] === "c");
+
+    const isPromotion =
+      movedPieceBefore.description.name === "pawn" &&
+      movedPiece.description.name !== "pawn";
+
     let sound = "move";
     if (checkedTeam) sound = "check";
+    else if (isCastle) sound = "castle";
+    else if (isPromotion) sound = "promotion";
     else if (isCapture) sound = "capture";
 
     const hasNoMoves =
       pieces
-        .filter((p) => p.description.color !== this.turn) // get opponent's moves pieces
-        .flatMap((p) => p.possibleMoves).length === 0; // get all moves
+        .filter((p) => p.description.color !== this.turn) // get opponent's moves
+        .flatMap((p) => p.possibleMoves).length === 0; // check to see if opponent has moves or not
 
     const isCheckmate = checkedTeam && hasNoMoves;
 
     const moveNotation = this.getMoveNotation(
-      movedPieceBeforeUpdate,
-      move,
+      movedPiece, // after update
+      movedPieceBefore,
+      pieceIndex,
       checkedTeam,
       isCheckmate,
       isCapture
@@ -89,12 +114,15 @@ class Game {
       this.moves.push([moveNotation]); // add a new move if it's white's turn
     else this.moves[this.moves.length - 1].push(moveNotation); // add to an existing move if it's black's turn
 
-    const newTurn = this.turn === "white" ? "black" : "white";
+    if (hasNoMoves) {
+      const winnerId = checkedTeam
+        ? player1.color === this.turn
+          ? player1.id
+          : player2.id
+        : null;
 
-    io.to(this.id).emit("move-response", pieces, this.moves, newTurn, sound);
+      // winner id is null when there is a stalemate
 
-    if (checkedTeam && hasNoMoves) {
-      const winnerId = player1.color === turn ? player1.id : player2.id;
       io.to(this.id).emit("game-end", winnerId);
 
       // removes all players from the game and deletes the game
@@ -105,16 +133,25 @@ class Game {
     }
 
     this.pieces = pieces;
-    this.turn = newTurn;
+    this.turn = this.turn === "white" ? "black" : "white";
+
+    io.to(this.id).emit("move-response", this, sound);
 
     return false;
   }
 
-  getMoveNotation(movedPiece, newPos, isCheck, isCheckmate, isCapture) {
-    // movedPiece is before update
+  getMoveNotation(
+    movedPieceAfter,
+    movedPieceBefore,
+    index,
+    isCheck,
+    isCheckmate,
+    isCapture
+  ) {
+    const oldPos = movedPieceBefore.position;
+    const { symbol, name, color } = movedPieceBefore.description;
 
-    const oldPos = movedPiece.position;
-    const { symbol, name, color } = movedPiece.description;
+    const newPos = movedPieceAfter.position;
 
     let moveNotation = `${symbol}${newPos}`;
 
@@ -123,35 +160,38 @@ class Game {
     if (castleCondition && newPos[0] === "g") moveNotation = "O-O";
     else if (castleCondition && newPos[0] === "c") moveNotation = "O-O-O";
     else {
-      // get other moves that are of the same name and same color but not this one
+      // find if the move could have been made by another piece of the same name and color eg two black knights can move to the same square so notation has to be more specific.
       const sharedBy = this.pieces
         .filter(
-          (piece) =>
-            piece.description.name === name && // same type of piece eg knight
-            piece.description.color === color && // same color
-            piece !== movedPiece // howerver, not the moved piece
+          (piece, i) =>
+            piece.description.name === name &&
+            piece.description.color === color &&
+            i !== index
         )
         .find((p) => p.possibleMoves.includes(newPos));
 
-      let oldPosNotation = oldPos[0]; // default to the file of the old position if move is shared by similar piece eg Nce5
+      let oldPosNotation = oldPos[0]; // default to the file of the old position if move is shared by similar piece eg the c in Nce5
 
       if (name !== "pawn" && sharedBy) {
-        if (oldPos[0] === sharedBy.position[0]) oldPosNotation = oldPos[1]; // if the file is the same, use the rank instead eg N4e5
+        if (oldPos[0] === sharedBy.position[0]) oldPosNotation = oldPos[1]; // if the file is the same, use the rank instead eg the 4 in N4e5
 
         moveNotation = `${symbol}${oldPosNotation}${newPos}`;
       }
 
-      if (isCapture && name === "pawn") {
-        moveNotation = `${oldPos[0]}x${newPos}`;
-      } else if (isCapture) {
-        moveNotation = sharedBy
-          ? `${symbol}${oldPosNotation}x${newPos}`
-          : `${symbol}x${newPos}`;
-      }
+      // handles capture notation
+      if (isCapture && (sharedBy || name === "pawn")) {
+        moveNotation = `${symbol}${oldPosNotation}x${newPos}`;
+      } else if (isCapture) moveNotation = `${symbol}x${newPos}`;
     }
 
-    if (isCheckmate) moveNotation = moveNotation + "#";
-    else if (isCheck) moveNotation = moveNotation + "+";
+    // handles pawn promotion notation
+    if (name === "pawn" && movedPieceAfter.description.name !== "pawn") {
+      moveNotation += `=${movedPieceAfter.description.symbol}`; // eg e8=Q
+    }
+
+    // handles check and checkmate notation
+    if (isCheckmate) moveNotation += "#";
+    else if (isCheck) moveNotation += "+";
 
     return moveNotation;
   }

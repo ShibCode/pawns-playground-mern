@@ -13,6 +13,7 @@ const User = ({ children }) => {
   //   boardSide: "white",
   //   isPlaying: false,
   //   color: "",
+  //   timeLeft: 600
   // }
 
   return (

@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Piece from "./Piece";
-import { useGame } from "../../context/Game";
-import { useUser } from "../../context/User";
-import { useSocket } from "../../context/Socket";
-import { captureSound, checkSound, moveSound } from "../../utils/sounds";
-import letterKeys from "../../data/letterKeys.json";
+import { useGame } from "../../../context/Game";
+import { useUser } from "../../../context/User";
+import { useSocket } from "../../../context/Socket";
+import {
+  captureSound,
+  castleSound,
+  checkSound,
+  moveSound,
+  promotionSound,
+} from "../../../utils/sounds";
+import letterKeys from "../../../data/letterKeys.json";
 import { useParams } from "react-router-dom";
 
 const Pieces = () => {
@@ -24,15 +30,18 @@ const Pieces = () => {
   }, [socket]);
 
   const setupListeners = () => {
-    socket.on("move-response", (pieces, moves, turn, sound) => {
+    socket.on("move-response", (game, sound) => {
       setIsProcessing(false);
-      setGame((prev) => ({ ...prev, turn, pieces, moves })); // changing turns after move response
+      setGame(game); // changing turns after move response
 
       if (sound === "check") checkSound.play();
       else if (sound === "capture") captureSound.play();
+      else if (sound === "castle") castleSound.play();
+      else if (sound === "promotion") promotionSound.play();
       else moveSound.play();
     });
-    socket.on("reverse-invalid-move", (game) => {
+
+    socket.on("reverse-invalid-action", (game) => {
       setGame(game);
       setIsProcessing(false);
     }); // if the move is invalid, reverse the game state
@@ -40,7 +49,7 @@ const Pieces = () => {
 
   const removeListeners = () => {
     socket.off("move-response");
-    socket.off("reverse-invalid-move");
+    socket.off("reverse-invalid-action");
   };
 
   const move = (e, pieceIndex, newPos = "") => {

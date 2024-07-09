@@ -31,6 +31,7 @@ class GameManager {
     socket.on("move-request", (gameId, pieceIndex, newPosition) =>
       this.move(gameId, pieceIndex, newPosition, socket)
     );
+    socket.on("timeout", (gameId) => this.timeout(socket, gameId));
     socket.on("req-get-ongoing-games", () => this.sendGames(socket));
     socket.on("request-connect-to-game", (gameId, userId) =>
       this.connectToGame(socket, gameId, userId)
@@ -71,24 +72,47 @@ class GameManager {
     }
   }
 
-  // when user comes to the link of a game including the players
-  connectToGame(socket, gameId, userId) {
+  timeout(socket, gameId) {
     const game = this.games.find((game) => game.id === gameId);
-    if (!game) return;
+    if (game) {
+      game.player1.timeLeft -= Date.now() - game.lastUpdatedAt;
+      game.player2.timeLeft -= Date.now() - game.lastUpdatedAt;
+      game.lastUpdatedAt = Date.now();
 
-    if (game.player1.id === userId || game.player2.id === userId) {
-      socket.join(gameId); // join the room of the game
-      socket.emit("response-connect-to-game", game); // send the game data to the user
+      if (game.player1.timeLeft > 0 && game.player2.timeLeft > 0) {
+        return socket.emit("reverse-invalid-action", game);
+      }
 
-      // set player id to the new id
-      if (game.player1.id === userId) game.player1.id = socket.id;
-      else game.player2.id = socket.id;
-    } else {
-      socket.join(gameId); // join the room of the game
-      socket.emit("response-connect-to-game", game); // send the game data to the user
+      const { id } = game.player1.timeLeft <= 0 ? game.player2 : game.player1;
+      this.io.to(gameId).emit("game-end", id);
+
+      this.games = this.games.filter((g) => g.id !== gameId); // remove the game from the list of games
+      this.sendGames(this.io); // update the list of ongoing games for all users
     }
   }
 
+  // when user comes to the link of a game including when the players reconnect
+  connectToGame(socket, gameId, userId) {
+    const game = this.games.find((game) => game.id === gameId);
+    if (!game) return socket.emit("redirect-home");
+
+    // set player id to the new socket id if a player has reconnected
+    if (game.player1.id === userId) game.player1.id = socket.id;
+    else if (game.player2.id === userId) game.player2.id = socket.id;
+
+    // Updating time of players here when a spectator comes or reconnection happens
+    if (game.lastUpdatedAt) {
+      const playerWithTurn =
+        game.player1.color === game.turn ? game.player1 : game.player2;
+      playerWithTurn.timeLeft -= Date.now() - game.lastUpdatedAt;
+      game.lastUpdatedAt = Date.now();
+    }
+
+    socket.join(gameId); // join the room of the game
+    socket.emit("response-connect-to-game", game); // send the game data to the user
+  }
+
+  // send ongoing games to all users so they can spectate
   sendGames(socketOrIo) {
     socketOrIo.emit("res-get-ongoing-games", this.games);
   }

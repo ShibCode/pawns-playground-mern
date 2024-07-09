@@ -19,8 +19,6 @@ const App = () => {
   // }, []);
   // ! </TEMP>
 
-  localStorage.clear();
-
   useEffect(() => {
     setupListeners();
     return () => removeListeners();

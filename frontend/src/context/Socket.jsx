@@ -11,8 +11,8 @@ const Socket = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // const url = "ws://localhost:8080/";
-    const url = "https://pawns-playground-mern.onrender.com/";
+    const url = "ws://localhost:8080/";
+    // const url = "https://pawns-playground-mern.onrender.com/";
 
     const socket = io(url, { transports: ["websocket"] });
 

@@ -1,17 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --tile-size: 12.5vh;
+    --tile-size: calc((100vh - 64px - 64px) / 8);
   }
 
   body {
     background-color: #333;
   }
+}
 
-  .game > * {
-    user-select: none;
+.moves-scroll {
+  overflow-y: scroll;
+  scrollbar-color: #00000060 transparent;
+  scrollbar-width: thin;
+}
+
+@-moz-document url-prefix() {
+  .moves-scroll {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
   }
 }

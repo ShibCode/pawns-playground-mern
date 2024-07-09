@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { useGame } from "../../context/Game";
-import tilePosition from "../../data/tilesPosition.json";
-import { useUser } from "../../context/User";
+import React, { useRef, useState } from "react";
+import { useGame } from "../../../context/Game";
+import tilePosition from "../../../data/tilesPosition.json";
+import { useUser } from "../../../context/User";
 import Draggable from "react-draggable";
-import incrementPosition from "../../utils/incrementPosition";
+import incrementPosition from "../../../utils/incrementPosition";
 const Piece = ({
   description,
   src,
@@ -27,7 +27,8 @@ const Piece = ({
   const handleDrag = (_, data) => {
     if (clickedPiece !== index) setClickedPiece(index);
 
-    const tileSize = window.innerHeight / 8;
+    const wrapper = document.querySelector(".pieces-wrapper");
+    const tileSize = wrapper.getBoundingClientRect().height / 8;
 
     const translateX = Math.round(data.x / tileSize) * 100;
     const translateY = Math.round(data.y / tileSize) * 100;
@@ -48,7 +49,8 @@ const Piece = ({
   const handleDragStop = (_, data) => {
     setDragPos({ x: null, y: null });
 
-    const tileSize = window.innerHeight / 8;
+    const wrapper = document.querySelector(".pieces-wrapper");
+    const tileSize = wrapper.getBoundingClientRect().height / 8;
 
     const translateX = Math.round(data.x / tileSize);
     const translateY = -Math.round(data.y / tileSize);
@@ -67,6 +69,8 @@ const Piece = ({
       move("", index, newPos);
     }
   };
+
+  const pieceRef = useRef();
 
   return (
     <>
@@ -88,8 +92,10 @@ const Piece = ({
         onDrag={handleDrag}
         onStop={handleDragStop}
         position={{ x: 0, y: 0 }}
+        nodeRef={pieceRef}
       >
         <img
+          ref={pieceRef}
           src={src}
           style={{
             translate: `${x} ${y}`,

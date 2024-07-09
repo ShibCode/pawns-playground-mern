@@ -1,8 +1,8 @@
 import React from "react";
-import letterKeys from "../../data/letterKeys.json";
-import { useUser } from "../../context/User";
+import letterKeys from "../../../data/letterKeys.json";
+import { useUser } from "../../../context/User";
 
-const Board = () => {
+const Tiles = () => {
   const { user } = useUser();
 
   return (
@@ -61,4 +61,4 @@ const Board = () => {
   );
 };
 
-export default Board;
+export default Tiles;
