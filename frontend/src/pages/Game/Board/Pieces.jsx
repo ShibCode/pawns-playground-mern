@@ -3,17 +3,11 @@ import Piece from "./Piece";
 import { useGame } from "../../../context/Game";
 import { useUser } from "../../../context/User";
 import { useSocket } from "../../../context/Socket";
-import {
-  captureSound,
-  castleSound,
-  checkSound,
-  moveSound,
-  promotionSound,
-} from "../../../utils/sounds";
 import letterKeys from "../../../data/letterKeys.json";
 import { useParams } from "react-router-dom";
+import playSound from "../../../utils/playSound";
 
-const Pieces = () => {
+const Pieces = ({ historicPieces }) => {
   const [clickedPiece, setClickedPiece] = useState(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -33,12 +27,7 @@ const Pieces = () => {
     socket.on("move-response", (game, sound) => {
       setIsProcessing(false);
       setGame(game); // changing turns after move response
-
-      if (sound === "check") checkSound.play();
-      else if (sound === "capture") captureSound.play();
-      else if (sound === "castle") castleSound.play();
-      else if (sound === "promotion") promotionSound.play();
-      else moveSound.play();
+      playSound(sound);
     });
 
     socket.on("reverse-invalid-action", (game) => {
@@ -80,18 +69,31 @@ const Pieces = () => {
       className="pieces-wrapper absolute w-full h-full bottom-0 left-0"
       style={{ rotate: `${user.boardSide === "white" ? "0deg" : "180deg"}` }}
     >
-      {game.pieces.map((piece, index) => (
-        <Piece
-          key={index}
-          {...piece}
-          index={index}
-          clickedPiece={clickedPiece}
-          setClickedPiece={setClickedPiece}
-          turn={game.turn}
-          move={move}
-          isProcessing={isProcessing}
-        />
-      ))}
+      {historicPieces
+        ? historicPieces.map((piece, index) => (
+            <Piece
+              key={piece.defaultPosition}
+              {...piece}
+              index={index}
+              clickedPiece={clickedPiece}
+              setClickedPiece={setClickedPiece}
+              turn={game.turn}
+              move={move}
+              isProcessing={isProcessing}
+            />
+          ))
+        : game.pieces.map((piece, index) => (
+            <Piece
+              key={piece.defaultPosition}
+              {...piece}
+              index={index}
+              clickedPiece={clickedPiece}
+              setClickedPiece={setClickedPiece}
+              turn={game.turn}
+              move={move}
+              isProcessing={isProcessing}
+            />
+          ))}
     </div>
   );
 };

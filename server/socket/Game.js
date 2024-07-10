@@ -7,11 +7,12 @@ const {
 } = require("../utils/moveFunctions.js");
 
 // TODO: Ability for user to choose promotion
-// TODO: allow user to go to previous positions to view
 // TODO: Add En passant
 // TODO: Refactor
+// TODO: handle time hack
+// TODO: check possibilities for hack when seeing move history
 
-class Game {
+class GameModal {
   constructor(id, player1Id, player2Id) {
     const isWhite = Math.random() > 0.5;
 
@@ -19,16 +20,17 @@ class Game {
     this.player1 = {
       id: player1Id,
       color: isWhite ? "white" : "black",
-      timeLeft: 10 * 60 * 1000,
+      timeLeft: 60 * 60 * 1000,
     };
     this.player2 = {
       id: player2Id,
       color: isWhite ? "black" : "white",
-      timeLeft: 10 * 60 * 1000,
+      timeLeft: 60 * 60 * 1000,
     };
 
     this.pieces = getDefaultPieces();
-    this.moves = [];
+    this.moveNotations = [];
+    this.moveHistory = [];
     this.turn = "white";
     this.lastUpdatedAt = null;
   }
@@ -46,10 +48,10 @@ class Game {
     } // check if the move is valid
 
     // deducting the time left for the player who moved (except for first move of white)
-    if (this.lastUpdatedAt) {
+    if (this.lastUpdatedAt)
       playerWithTurn.timeLeft -= Date.now() - this.lastUpdatedAt;
-      this.lastUpdatedAt = Date.now();
-    }
+
+    this.lastUpdatedAt = Date.now();
 
     const movedPieceBefore = { ...movedPiece };
 
@@ -110,9 +112,9 @@ class Game {
       isCapture
     ); // get the move notation eg Nf3+ or O-O or Qxe5#
 
-    if (this.turn === "white")
-      this.moves.push([moveNotation]); // add a new move if it's white's turn
-    else this.moves[this.moves.length - 1].push(moveNotation); // add to an existing move if it's black's turn
+    if (this.turn === "white") this.moveNotations.push([moveNotation]);
+    // add a new move if it's white's turn
+    else this.moveNotations[this.moveNotations.length - 1].push(moveNotation); // add to an existing move if it's black's turn
 
     if (hasNoMoves) {
       const winnerId = checkedTeam
@@ -132,6 +134,7 @@ class Game {
       return true;
     }
 
+    this.moveHistory.push([pieceIndex, move, sound]);
     this.pieces = pieces;
     this.turn = this.turn === "white" ? "black" : "white";
 
@@ -195,6 +198,10 @@ class Game {
 
     return moveNotation;
   }
+
+  sayHi() {
+    console.log("lo");
+  }
 }
 
-module.exports = Game;
+module.exports = GameModal;

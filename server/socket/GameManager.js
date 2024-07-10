@@ -1,4 +1,4 @@
-const Game = require("./Game");
+const GameModal = require("./Game");
 const { v4: uuidv4 } = require("uuid");
 
 class GameManager {
@@ -7,8 +7,6 @@ class GameManager {
     this.users = [];
     this.games = [];
     this.waitingToBeConnected = null;
-
-    this.move = this.move.bind(this);
   }
 
   addUser(socket) {
@@ -46,7 +44,7 @@ class GameManager {
       const p1 = this.waitingToBeConnected;
       const p2 = socket;
 
-      const game = new Game(gameId, p1.id, p2.id); // create a new game
+      const game = new GameModal(gameId, p1.id, p2.id); // create a new game
       this.games.push(game);
 
       p1.emit("start-game", game.player1, game.id);

@@ -43,12 +43,10 @@ const updatePosition = (pieces, movedPiece, move, isPlayerMove = null) => {
   } // </Castling>
 
   // <Promotions>
-  if (name === "pawn" && isPlayerMove) {
-    if (move[1] == 8 || move[1] == 1) {
-      const description = { name: "queen", symbol: "Q", color };
-      movedPiece.description = description;
-      movedPiece.src = `/pieces/wq.png`;
-    }
+  if (name === "pawn" && isPlayerMove && (move[1] == 8 || move[1] == 1)) {
+    const description = { name: "queen", symbol: "Q", color };
+    movedPiece.description = description;
+    movedPiece.src = `/pieces/${color[0]}q.png`;
   } // </Promotions>
 
   movedPiece.position = move; // Update the position of the piece

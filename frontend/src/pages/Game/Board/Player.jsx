@@ -17,9 +17,9 @@ const Player = ({ name, rating, flag, color, order }) => {
   const [time, actions] = useClock(timeLeft / 1000);
 
   useEffect(() => {
-    if (color === game.turn && game.moves.length > 0) actions.start();
+    if (color === game.turn && game.moveHistory.length > 0) actions.start();
     else actions.pause();
-  }, [game.turn]);
+  }, [game]);
 
   useEffect(() => {
     if (time === 0 && user.color === game.turn) socket.emit("timeout", game.id);
@@ -37,13 +37,17 @@ const Player = ({ name, rating, flag, color, order }) => {
       </div>
 
       <div
-        className={`self-stretch flex justify-between items-center rounded-[3px] text-[24px] font-semibold px-3 ml-auto w-[140px] leading-[1]  ${
+        className={`self-stretch flex justify-between items-center rounded-[3px] text-[24px] font-semibold px-3 ml-auto gap-7 leading-[1]  ${
           color === "white"
             ? "bg-white text-black"
             : "bg-[#262421] text-[#82817F]"
         } ${game.turn === color ? "opacity-100" : "opacity-60"}`}
       >
-        {game.turn === color && <Clock className="size-6" />}
+        <Clock
+          className={`size-6 ${
+            game.turn === color ? "opacity-100" : "opacity-0"
+          }`}
+        />
         <span className="ml-auto">{convertToClockTime(600, time)}</span>
       </div>
     </div>

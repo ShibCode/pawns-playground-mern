@@ -5,12 +5,12 @@ import Player from "./Player";
 import GameEndModal from "../GameEndModal";
 import { useUser } from "../../../context/User";
 
-const Board = ({ result }) => {
+const Board = ({ historicPieces }) => {
   const { user } = useUser();
 
   return (
     <div className="flex flex-col gap-3 w-max relative">
-      <GameEndModal result={result} />
+      <GameEndModal />
 
       <Player
         name="noob"
@@ -22,7 +22,7 @@ const Board = ({ result }) => {
 
       <div className="relative [&>*]:select-none">
         <Tiles />
-        <Pieces />
+        <Pieces historicPieces={historicPieces} />
       </div>
 
       <Player

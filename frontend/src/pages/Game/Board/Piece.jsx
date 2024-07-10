@@ -98,10 +98,11 @@ const Piece = ({
           ref={pieceRef}
           src={src}
           style={{
+            transition: "translate 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             translate: `${x} ${y}`,
             rotate: `${user.boardSide === "white" ? "0deg" : "180deg"}`,
           }}
-          className={`piece cursor-grab absolute w-tile bottom-0 left-0 transition-none ${
+          className={`piece cursor-grab absolute w-tile bottom-0 left-0 ${
             clickedPiece === index ? "z-10" : "z-0"
           }`}
           draggable={false}

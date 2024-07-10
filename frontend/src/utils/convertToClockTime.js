@@ -1,24 +1,23 @@
-const convertToClockTime = (maxTime, timeRemaining) => {
-  let hours = Math.floor(timeRemaining / 3600);
-  let minutes = Math.floor((timeRemaining % 3600) / 60);
-  let seconds = timeRemaining % 60;
+function convertToClockTime(maxTime, timeRemaining) {
+  function formatTime(seconds) {
+    let hours = Math.floor(seconds / 3600);
+    let minutes = Math.floor((seconds % 3600) / 60);
+    let secs = seconds % 60;
 
-  let maxHours = Math.floor(maxTime / 3600);
-  let maxMinutes = Math.floor((maxTime % 3600) / 60);
+    let hoursStr = hours > 0 ? hours + ":" : "";
+    let minutesStr = hours > 0 && minutes < 10 ? "0" + minutes : minutes;
+    let secsStr = secs < 10 ? "0" + secs : secs;
 
-  if (maxHours > 0) {
-    hours = hours.toString();
-    minutes = minutes.toString().padStart(2, "0");
-    seconds = seconds.toString().padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
-  } else if (maxMinutes > 0) {
-    minutes = Math.floor(timeRemaining / 60).toString();
-    seconds = (timeRemaining % 60).toString().padStart(2, "0");
-    return `${minutes}:${seconds}`;
-  } else {
-    seconds = timeRemaining.toString();
-    return `0:${seconds.padStart(2, "0")}`;
+    if (hours > 0) {
+      return hoursStr + minutesStr + ":" + secsStr;
+    } else {
+      return minutesStr + ":" + secsStr;
+    }
   }
-};
+
+  let timeRemainingFormatted = formatTime(timeRemaining);
+
+  return timeRemainingFormatted;
+}
 
 export default convertToClockTime;

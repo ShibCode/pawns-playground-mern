@@ -1,17 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSocket } from "../../context/Socket";
+import playSound from "../../utils/playSound";
+import { useUser } from "../../context/User";
 
-const GameEndModal = ({ result }) => {
-  let message = "";
+const MESSAGES = {
+  win: "You Won!",
+  lose: "You Lost!",
+  draw: "Draw!",
+};
 
-  if (result === "win") message = "You Won!";
-  else if (result === "lose") message = "You Lost!";
-  else if (result === "draw") message = "Draw!";
+const GameEndModal = () => {
+  const [message, setMessage] = useState(null);
+
+  const { user } = useUser();
+  const socket = useSocket();
+
+  useEffect(() => {
+    socket.on("game-end", (winnerId) => {
+      playSound("game-end");
+      localStorage.removeItem("ongoing-game");
+
+      setMessage(() => {
+        if (!winnerId) return MESSAGES.draw;
+        if (winnerId === user.id) return MESSAGES.win;
+        if (winnerId !== user.id) return MESSAGES.lose;
+      });
+    });
+  }, []);
 
   return (
     <AnimatePresence>
-      {result && (
+      {message && (
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -21,7 +42,7 @@ const GameEndModal = ({ result }) => {
         >
           <div
             className={`text-[32px] text-white font-bold py-3 ${
-              result === "win" ? "bg-[#86A84F]" : "bg-[#666463]"
+              message === MESSAGES.win ? "bg-[#86A84F]" : "bg-[#666463]"
             }`}
           >
             {message}
