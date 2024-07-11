@@ -1,16 +1,12 @@
+const generateMoves = require("../utils/generateMoves.js");
 const getDefaultPieces = require("../utils/getDefaultPieces.js");
-const {
-  updatePosition,
-  findCheck,
-  updatePossibleMoves,
-  adjustForChecks,
-} = require("../utils/moveFunctions.js");
 
 // TODO: Ability for user to choose promotion
 // TODO: Add En passant
 // TODO: Refactor
 // TODO: handle time hack
 // TODO: check possibilities for hack when seeing move history
+// TODO: fix transition bug
 
 class GameModal {
   constructor(id, player1Id, player2Id) {
@@ -55,31 +51,20 @@ class GameModal {
 
     const movedPieceBefore = { ...movedPiece };
 
-    let { pieces, isCapture } = updatePosition(
-      this.pieces,
-      movedPiece,
-      move,
-      true
-    );
-
-    pieces = updatePossibleMoves(pieces);
-    const checkedTeam = findCheck(pieces);
+    const isCapture = this.updatePosition(movedPiece, move, true);
+    this.pieces = this.updatePossibleMoves();
+    this.pieces = this.adjustForChecks();
+    const checkedTeam = this.findCheck();
 
     // disable castling if king is checked
     if (checkedTeam) {
-      const king = pieces.find(
-        ({ description }) =>
-          description.name === "king" && description.color === checkedTeam
-      );
+      const king = this.getPiece(checkedTeam === "white" ? "e1" : "e8");
 
-      if (king.canCastleKingSide || king.canCastleQueenSide) {
+      if (king.position[0] === "e")
         king.possibleMoves = king.possibleMoves.filter(
           (move) => move[0] !== "g" && move[0] !== "c"
         );
-      }
     }
-
-    pieces = adjustForChecks(pieces, this.turn);
 
     const isCastle =
       movedPiece.description.name === "king" &&
@@ -97,7 +82,7 @@ class GameModal {
     else if (isCapture) sound = "capture";
 
     const hasNoMoves =
-      pieces
+      this.pieces
         .filter((p) => p.description.color !== this.turn) // get opponent's moves
         .flatMap((p) => p.possibleMoves).length === 0; // check to see if opponent has moves or not
 
@@ -135,7 +120,6 @@ class GameModal {
     }
 
     this.moveHistory.push([pieceIndex, move, sound]);
-    this.pieces = pieces;
     this.turn = this.turn === "white" ? "black" : "white";
 
     io.to(this.id).emit("move-response", this, sound);
@@ -199,8 +183,138 @@ class GameModal {
     return moveNotation;
   }
 
-  sayHi() {
-    console.log("lo");
+  updatePosition(movedPiece, move, isPlayerMove = null) {
+    // isPlayerMove is a thing because the server is also moving pieces to filter out moves after this function is called - adjustForChecks()
+
+    const { defaultPosition } = movedPiece;
+    const { name, color } = movedPiece.description;
+
+    // <Castling>
+    if (name === "king" && isPlayerMove) {
+      if (movedPiece.canCastleKingSide && move[0] === "g") {
+        const rook = this.getPiece(color === "white" ? "h1" : "h8");
+        rook.position = `f${rook.position[1]}`;
+      } else if (movedPiece.canCastleQueenSide && move[0] === "c") {
+        const rook = this.getPiece(color === "white" ? "a1" : "a8");
+        rook.position = `d${rook.position[1]}`;
+      }
+
+      movedPiece.canCastleKingSide = false;
+      movedPiece.canCastleQueenSide = false;
+    } else if (name === "rook" && isPlayerMove) {
+      const hisKing = this.getPiece(color === "white" ? "e1" : "e8");
+
+      if (defaultPosition[0] === "a") hisKing.canCastleQueenSide = false;
+      else if (defaultPosition[0] === "h") hisKing.canCastleKingSide = false;
+    } // </Castling>
+
+    // <Promotions>
+    if (name === "pawn" && isPlayerMove && (move[1] == 8 || move[1] == 1)) {
+      const description = { name: "queen", symbol: "Q", color };
+      movedPiece.description = description;
+      movedPiece.src = `/pieces/${color[0]}q.png`;
+    } // </Promotions>
+
+    movedPiece.position = move; // Update the position of the piece
+
+    let isCapture = false;
+
+    this.pieces = this.pieces.filter((piece) => {
+      if (piece.position !== move || piece === movedPiece) return true;
+
+      isCapture = true;
+      return false;
+    }); // remove captured piece if any
+
+    return isCapture;
+  }
+
+  updatePossibleMoves(specificPieces = null) {
+    const newPieces = (specificPieces ? specificPieces : this.pieces).map(
+      (piece) => {
+        const { color, name } = piece.description;
+
+        const parameters = [this.pieces, piece.position, color];
+        if (name === "pawn") parameters.push(piece.defaultPosition);
+        else if (name === "king") {
+          parameters.push(piece.canCastleKingSide);
+          parameters.push(piece.canCastleQueenSide);
+        }
+
+        const possibleMoves = generateMoves[name](...parameters); // e.g generateMoves[pawn](parameters)
+
+        return { ...piece, possibleMoves };
+      }
+    );
+
+    return newPieces;
+  }
+
+  findCheck(specificPieces = null, specificTeam = false) {
+    const kingPositions = {
+      white: this.getPiece("e1").position,
+      black: this.getPiece("e8").position,
+    }; // getting kings position
+
+    const allPossibleMoves = new Set(
+      (specificPieces ?? this.pieces).flatMap((p) => p.possibleMoves)
+    );
+
+    if (specificTeam) {
+      return allPossibleMoves.has(kingPositions[specificTeam]);
+    }
+
+    if (allPossibleMoves.has(kingPositions.white)) return "white";
+    else if (allPossibleMoves.has(kingPositions.black)) return "black";
+    else return null;
+  }
+
+  adjustForChecks() {
+    return this.pieces.map((piece, index) => {
+      const { color, name } = piece.description;
+
+      if (color === this.turn) return piece;
+
+      let canCastleKingSide = piece.canCastleKingSide;
+      let canCastleQueenSide = piece.canCastleQueenSide;
+
+      let newPossibleMoves = piece.possibleMoves.filter((move) => {
+        // imaginary movements of piece
+        let newPieces = this.pieces.reduce((acc, piece, i) => {
+          if (piece.position === move) return acc;
+          if (index !== i) return [...acc, piece];
+
+          return [...acc, { ...piece, position: move }];
+        }, []);
+
+        newPieces = this.updatePossibleMoves(newPieces);
+        const getsChecked = this.findCheck(newPieces, color); // finds if piece's king is now checked
+
+        // disable castling if the tile through which the king passes ,when castling, is attacked
+        if (name === "king" && getsChecked) {
+          if (move[0] === "d") canCastleQueenSide = false;
+          else if (move[0] === "f") canCastleKingSide = false;
+        }
+
+        return !getsChecked; // if piece's king gets check, discard the move
+      });
+
+      if (name === "king" && piece.position[0] === "e") {
+        newPossibleMoves = newPossibleMoves.filter((move) => {
+          if (move[0] === "g" && !canCastleKingSide) return false;
+          else if (move[0] === "c" && !canCastleQueenSide) return false;
+          return true;
+        });
+      }
+
+      return { ...piece, possibleMoves: newPossibleMoves };
+    });
+  }
+
+  getPiece(defaultPosition) {
+    return this.pieces.find(
+      (piece) => defaultPosition === piece.defaultPosition
+    );
   }
 }
 

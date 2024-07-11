@@ -6,6 +6,7 @@ import { useSocket } from "../../../context/Socket";
 import letterKeys from "../../../data/letterKeys.json";
 import { useParams } from "react-router-dom";
 import playSound from "../../../utils/playSound";
+import updatePosition from "../../../utils/updatePosition";
 
 const Pieces = ({ historicPieces }) => {
   const [clickedPiece, setClickedPiece] = useState(null);
@@ -56,10 +57,15 @@ const Pieces = ({ historicPieces }) => {
 
     setIsProcessing(true);
     setClickedPiece(null);
-    setGame((prev) => ({
-      ...prev,
-      turn: prev.turn === "white" ? "black" : "white",
-    })); // changing turns before move request
+    setGame((prev) => {
+      const pieces = updatePosition(prev.pieces, pieceIndex, newPos); // updating the position of the piece
+
+      return {
+        ...prev,
+        pieces,
+        turn: prev.turn === "white" ? "black" : "white",
+      };
+    }); // changing turns before move request
 
     socket.emit("move-request", gameId, pieceIndex, newPos);
   };

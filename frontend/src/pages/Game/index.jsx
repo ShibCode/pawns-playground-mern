@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import Board from "./Board";
 import Actions from "./Actions";
-import Moves from "./Moves";
+import Sidebar from "./Sidebar";
 import { useUser } from "../../context/User";
 import { useParams } from "react-router-dom";
 import { useSocket } from "../../context/Socket";
 import { useGame } from "../../context/Game";
-import parseMoveHistory from "../../utils/parseMoveHistory";
+import updatePosition from "../../utils/updatePosition";
 import playSound from "../../utils/playSound";
 import getDefaultPieces from "../../utils/getDefaultPieces";
 
@@ -51,7 +51,7 @@ const Game = () => {
     const historicPieces = game.moveHistory
       .slice(0, moveNumber)
       .reduce((acc, [pieceIndex, move]) => {
-        return parseMoveHistory(acc, pieceIndex, move);
+        return updatePosition(acc, pieceIndex, move);
       }, getDefaultPieces());
 
     // play the sound
@@ -104,7 +104,7 @@ const Game = () => {
     <div className="h-screen py-3 flex gap-3 justify-center">
       <Board historicPieces={historicPieces} />
       <Actions />
-      <Moves
+      <Sidebar
         seePastPosition={seePastPosition}
         currentPosition={
           currentPosition.current === null

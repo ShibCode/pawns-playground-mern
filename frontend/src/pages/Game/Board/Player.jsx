@@ -19,7 +19,7 @@ const Player = ({ name, rating, flag, color, order }) => {
   useEffect(() => {
     if (color === game.turn && game.moveHistory.length > 0) actions.start();
     else actions.pause();
-  }, [game]);
+  }, [game.lastUpdatedAt]);
 
   useEffect(() => {
     if (time === 0 && user.color === game.turn) socket.emit("timeout", game.id);

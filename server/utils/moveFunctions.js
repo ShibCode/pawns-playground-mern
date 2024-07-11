@@ -1,7 +1,7 @@
 const generateMoves = require("./generateMoves");
 
 const cumulatePossibleMoves = (pieces) => {
-  return new Set(pieces.map((p) => p.possibleMoves).flat());
+  return new Set(pieces.flatMap((p) => p.possibleMoves));
 };
 
 // moves the piece
@@ -83,11 +83,10 @@ const findCheck = (pieces, specificTeam = false) => {
 // update possible moves for pieces
 const updatePossibleMoves = (pieces) => {
   const newPieces = pieces.map((piece) => {
-    const { position, defaultPosition } = piece;
     const { color, name } = piece.description;
 
-    const parameters = [pieces, position, color];
-    if (name === "pawn") parameters.push(defaultPosition);
+    const parameters = [pieces, piece.position, color];
+    if (name === "pawn") parameters.push(piece.defaultPosition);
     else if (name === "king") {
       parameters.push(piece.canCastleKingSide);
       parameters.push(piece.canCastleQueenSide);
@@ -103,7 +102,7 @@ const updatePossibleMoves = (pieces) => {
 
 // adjusts for pins, moving into checks and filtering moves after getting checked
 const adjustForChecks = (pieces, turn) => {
-  return pieces.map((piece) => {
+  return pieces.map((piece, index) => {
     const { color, name } = piece.description;
 
     if (color === turn) return piece;
@@ -112,40 +111,30 @@ const adjustForChecks = (pieces, turn) => {
     let canCastleQueenSide = piece.canCastleQueenSide;
 
     let newPossibleMoves = piece.possibleMoves.filter((move) => {
-      const originalPosition = piece.position;
+      // imaginary movements of piece
+      let newPieces = pieces.reduce((acc, piece, i) => {
+        if (piece.position === move) return acc;
+        if (index !== i) return [...acc, piece];
 
-      const { pieces: newPieces1 } = updatePosition(pieces, piece, move); // imaginary movement of piece
-      const newPieces2 = updatePossibleMoves(newPieces1);
-      const getsChecked = findCheck(newPieces2, color); // finds if piece's king is now checked
+        return [...acc, { ...piece, position: move }];
+      }, []);
+
+      newPieces = updatePossibleMoves(newPieces);
+      const getsChecked = findCheck(newPieces, color); // finds if piece's king is now checked
 
       // disable castling if the tile through which the king passes ,when castling, is attacked
-      if (
-        name === "king" &&
-        (move === "d1" || move === "d8") &&
-        getsChecked &&
-        canCastleQueenSide
-      ) {
-        canCastleQueenSide = false;
-      } else if (
-        name === "king" &&
-        (move === "f1" || move === "f8") &&
-        getsChecked &&
-        canCastleKingSide
-      ) {
-        canCastleKingSide = false;
+      if (name === "king" && getsChecked) {
+        if (move[0] === "d") canCastleQueenSide = false;
+        else if (move[0] === "f") canCastleKingSide = false;
       }
-
-      piece.position = originalPosition;
 
       return !getsChecked; // if piece's king gets check, discard the move
     });
 
-    if (name === "king") {
+    if (name === "king" && piece.position[0] === "e") {
       newPossibleMoves = newPossibleMoves.filter((move) => {
-        if ((move === "g1" || move === "g8") && !canCastleKingSide)
-          return false;
-        else if ((move === "c1" || move === "c8") && !canCastleQueenSide)
-          return false;
+        if (move[0] === "g" && !canCastleKingSide) return false;
+        else if (move[0] === "c" && !canCastleQueenSide) return false;
         return true;
       });
     }

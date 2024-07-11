@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useGame } from "../../../context/Game";
 import tilePosition from "../../../data/tilesPosition.json";
 import { useUser } from "../../../context/User";
@@ -25,6 +25,8 @@ const Piece = ({
   const [dragPos, setDragPos] = useState({ x: null, y: null });
 
   const handleDrag = (_, data) => {
+    pieceRef.current.style.transition = "unset";
+
     if (clickedPiece !== index) setClickedPiece(index);
 
     const wrapper = document.querySelector(".pieces-wrapper");
@@ -71,6 +73,13 @@ const Piece = ({
   };
 
   const pieceRef = useRef();
+
+  useEffect(() => {
+    setTimeout(() => {
+      pieceRef.current.style.transition =
+        "translate 0.2s cubic-bezier(0.4, 0, 0.2, 1)";
+    }, 1);
+  }, [position]);
 
   return (
     <>

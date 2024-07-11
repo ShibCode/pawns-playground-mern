@@ -1,15 +1,10 @@
-const parseMoveHistory = (pieces, pieceIndex, move) => {
+const updatePosition = (pieces, pieceIndex, move) => {
   const movedPiece = pieces.find((_, index) => index === pieceIndex);
 
-  const { defaultPosition } = movedPiece;
   const { name, color } = movedPiece.description;
 
-  const hisKing = pieces.find(
-    (p) => p.description.name === "king" && p.description.color === color
-  );
-
   // <Castling>
-  if (name === "king") {
+  if (name === "king" && movedPiece.position[0] === "e") {
     if (move[0] === "g") {
       const rook = pieces.find(
         (p) =>
@@ -47,4 +42,4 @@ const parseMoveHistory = (pieces, pieceIndex, move) => {
   return pieces;
 };
 
-export default parseMoveHistory;
+export default updatePosition;
