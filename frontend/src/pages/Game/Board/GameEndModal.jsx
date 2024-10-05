@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { useSocket } from "../../context/Socket";
-import playSound from "../../utils/playSound";
-import { useUser } from "../../context/User";
+import { useSocket } from "../../../context/Socket";
+import playSound from "../../../utils/playSound";
+import { useUser } from "../../../context/User";
 
 const MESSAGES = {
   win: "You Won!",

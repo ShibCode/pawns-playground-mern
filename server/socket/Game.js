@@ -29,6 +29,7 @@ class GameModal {
     this.moveHistory = [];
     this.turn = "white";
     this.lastUpdatedAt = null;
+    this.isEnded = false;
   }
 
   move(io, socket, pieceIndex, move) {
@@ -110,6 +111,11 @@ class GameModal {
 
       // winner id is null when there is a stalemate
 
+      this.moveHistory.push([pieceIndex, move, sound]);
+      this.turn = this.turn === "white" ? "black" : "white";
+      this.isEnded = true;
+
+      io.to(this.id).emit("move-response", this, sound);
       io.to(this.id).emit("game-end", winnerId);
 
       // removes all players from the game and deletes the game
@@ -229,43 +235,56 @@ class GameModal {
     return isCapture;
   }
 
-  updatePossibleMoves(specificPieces = null) {
-    const newPieces = (specificPieces ? specificPieces : this.pieces).map(
-      (piece) => {
-        const { color, name } = piece.description;
+  updatePossibleMoves(pieces = this.pieces) {
+    const newPieces = pieces.map((piece) => {
+      const { color, name } = piece.description;
 
-        const parameters = [this.pieces, piece.position, color];
-        if (name === "pawn") parameters.push(piece.defaultPosition);
-        else if (name === "king") {
-          parameters.push(piece.canCastleKingSide);
-          parameters.push(piece.canCastleQueenSide);
-        }
-
-        const possibleMoves = generateMoves[name](...parameters); // e.g generateMoves[pawn](parameters)
-
-        return { ...piece, possibleMoves };
+      const parameters = [pieces, piece.position, color];
+      if (name === "pawn") parameters.push(piece.defaultPosition);
+      else if (name === "king") {
+        parameters.push(piece.canCastleKingSide);
+        parameters.push(piece.canCastleQueenSide);
       }
-    );
+
+      const possibleMoves = generateMoves[name](...parameters); // e.g generateMoves[pawn](parameters)
+
+      return { ...piece, possibleMoves };
+    });
 
     return newPieces;
   }
 
-  findCheck(specificPieces = null, specificTeam = false) {
+  findCheck(
+    pieces = this.pieces,
+    specificTeam = false,
+    move = null,
+    piece = null
+  ) {
     const kingPositions = {
-      white: this.getPiece("e1").position,
-      black: this.getPiece("e8").position,
+      white: this.getPiece("e1", pieces).position,
+      black: this.getPiece("e8", pieces).position,
     }; // getting kings position
 
-    const allPossibleMoves = new Set(
-      (specificPieces ?? this.pieces).flatMap((p) => p.possibleMoves)
+    const allPossibleMovesForWhite = new Set(
+      pieces
+        .filter(({ description }) => description.color === "white")
+        .flatMap((p) => p.possibleMoves)
     );
 
-    if (specificTeam) {
-      return allPossibleMoves.has(kingPositions[specificTeam]);
+    const allPossibleMovesForBlack = new Set(
+      pieces
+        .filter(({ description }) => description.color === "black")
+        .flatMap((p) => p.possibleMoves)
+    );
+
+    if (specificTeam === "white") {
+      return allPossibleMovesForBlack.has(kingPositions[specificTeam]);
+    } else if (specificTeam === "black") {
+      return allPossibleMovesForWhite.has(kingPositions[specificTeam]);
     }
 
-    if (allPossibleMoves.has(kingPositions.white)) return "white";
-    else if (allPossibleMoves.has(kingPositions.black)) return "black";
+    if (allPossibleMovesForBlack.has(kingPositions.white)) return "white";
+    else if (allPossibleMovesForWhite.has(kingPositions.black)) return "black";
     else return null;
   }
 
@@ -288,7 +307,7 @@ class GameModal {
         }, []);
 
         newPieces = this.updatePossibleMoves(newPieces);
-        const getsChecked = this.findCheck(newPieces, color); // finds if piece's king is now checked
+        const getsChecked = this.findCheck(newPieces, color, move, piece); // finds if piece's king is now checked
 
         // disable castling if the tile through which the king passes ,when castling, is attacked
         if (name === "king" && getsChecked) {
@@ -311,8 +330,8 @@ class GameModal {
     });
   }
 
-  getPiece(defaultPosition) {
-    return this.pieces.find(
+  getPiece(defaultPosition, fromPieces) {
+    return (fromPieces ?? this.pieces).find(
       (piece) => defaultPosition === piece.defaultPosition
     );
   }

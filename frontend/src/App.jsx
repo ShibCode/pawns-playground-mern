@@ -12,13 +12,6 @@ const App = () => {
   const socket = useSocket();
   const { user, setUser } = useUser();
 
-  // ! <TEMP>
-  // const location = useLocation();
-  // useEffect(() => {
-  //   if (location.pathname !== "/") window.location.assign("/");
-  // }, []);
-  // ! </TEMP>
-
   useEffect(() => {
     setupListeners();
     return () => removeListeners();
@@ -26,30 +19,30 @@ const App = () => {
 
   const setupListeners = () => {
     if (!socket) return;
+    socket.on("redirect-home", () => navigate("/"));
 
     const pendingGame = JSON.parse(localStorage.getItem("ongoing-game"));
 
-    socket.on("redirect-home", () => navigate("/"));
-
-    socket.on("res-user-details", (id) => {
-      if (pendingGame) {
-        setUser({
-          ...pendingGame.player,
-          id, // set the new id instead of the previous socket id
-          boardSide: pendingGame.player?.color,
-          isPlaying: true,
-        });
-        navigate(`/game/${pendingGame.gameId}`); // connecting to a pending game
-      } else {
-        setUser({ id, boardSide: "white", isPlaying: false, color: "" });
-      }
-    });
-    socket.emit("req-user-details");
+    if (pendingGame) {
+      setUser({
+        ...pendingGame.player,
+        id: socket.id,
+        boardSide: pendingGame.player?.color,
+        isPlaying: true,
+      });
+      navigate(`/game/${pendingGame.gameId}`); // connecting to a pending game
+    } else {
+      setUser({
+        id: socket.id,
+        boardSide: "white",
+        isPlaying: false,
+        color: "",
+      });
+    }
   };
 
   const removeListeners = () => {
     if (!socket) return;
-    socket.off("get-user-details");
     socket.off("redirect-home");
   };
 

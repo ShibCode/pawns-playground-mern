@@ -2,7 +2,7 @@ import React from "react";
 import Tiles from "./Tiles";
 import Pieces from "./Pieces";
 import Player from "./Player";
-import GameEndModal from "../GameEndModal";
+import GameEndModal from "./GameEndModal";
 import { useUser } from "../../../context/User";
 
 const Board = ({ historicPieces }) => {

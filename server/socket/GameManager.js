@@ -20,10 +20,6 @@ class GameManager {
   }
 
   addHandler(socket) {
-    socket.on("req-user-details", () => {
-      socket.emit("res-user-details", socket.id);
-    }); // send user details on load
-
     socket.on("disconnect", () => this.removeUser(socket));
     socket.on("join-queue", () => this.joinQueue(socket));
     socket.on("move-request", (gameId, pieceIndex, newPosition) =>
