@@ -1,8 +1,6 @@
 const generateMoves = require("../utils/generateMoves.js");
 const getDefaultPieces = require("../utils/getDefaultPieces.js");
 
-// TODO: Ability for user to choose promotion
-// TODO: Add En passant
 // TODO: Refactor
 // TODO: handle time hack
 // TODO: check possibilities for hack when seeing move history
@@ -16,12 +14,12 @@ class GameModal {
     this.player1 = {
       id: player1Id,
       color: isWhite ? "white" : "black",
-      timeLeft: 60 * 60 * 1000,
+      timeLeft: 10 * 60 * 1000,
     };
     this.player2 = {
       id: player2Id,
       color: isWhite ? "black" : "white",
-      timeLeft: 60 * 60 * 1000,
+      timeLeft: 10 * 60 * 1000,
     };
 
     this.pieces = getDefaultPieces();
