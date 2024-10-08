@@ -16,7 +16,7 @@ const Tiles = () => {
           <div
             key={index}
             style={{ transform: `translateY(${factor * -100}%)` }}
-            className={`z-10 leading-[1] font-semibold p-1 absolute w-tile h-tile text-xl left-0 bottom-0 ${
+            className={`z-10 leading-[1] font-semibold p-1 absolute w-tile h-tile text-[calc(var(--tile-size)*0.25)] left-0 bottom-0 ${
               factor % 2 === 1 ? "text-tile-green" : "text-tile-peach"
             }`}
           >
@@ -34,7 +34,7 @@ const Tiles = () => {
           <div
             key={index}
             style={{ transform: `translateX(${factor * 100}%)` }}
-            className={`z-10 leading-[1] font-semibold p-1 absolute w-tile h-tile text-xl bottom-0 flex justify-end items-end ${
+            className={`z-10 leading-[1] font-semibold p-1 absolute w-tile h-tile text-[calc(var(--tile-size)*0.25)] bottom-0 flex justify-end items-end ${
               factor % 2 === 1 ? "text-tile-green" : "text-tile-peach"
             }`}
           >

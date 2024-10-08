@@ -101,9 +101,11 @@ const Game = () => {
   if (!game) return;
 
   return (
-    <div className="h-screen py-3 flex gap-3 justify-center">
-      <Board historicPieces={historicPieces} />
-      <Actions />
+    <div className="xl:h-screen py-3 flex flex-col items-center xl:items-stretch xl:flex-row gap-3 justify-center pl-3 pr-12 xl:pr-3">
+      <div className="flex gap-3 relative">
+        <Board historicPieces={historicPieces} />
+        <Actions />
+      </div>
       <Sidebar
         seePastPosition={seePastPosition}
         currentPosition={

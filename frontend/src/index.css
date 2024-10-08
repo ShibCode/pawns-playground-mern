@@ -26,3 +26,9 @@
     scrollbar-width: auto;
   }
 }
+
+@media (max-width: 915px) {
+  :root {
+    --tile-size: calc((100vw - 24px - 24px - 12px) / 8);
+  }
+}

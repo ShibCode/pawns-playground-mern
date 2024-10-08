@@ -3,7 +3,7 @@ import Moves from "./Moves";
 
 const Sidebar = ({ seePastPosition, currentPosition }) => {
   return (
-    <div className="flex flex-col w-[360px] bg-black bg-opacity-15 rounded-[4px] text-gray-300">
+    <div className="flex flex-col max-w-[840px] min-w-[280px] w-full xl:w-[360px] bg-black bg-opacity-15 rounded-[4px] text-gray-300">
       <div className="flex">
         <button className="font-semibold border-b-[3px] h-16 w-full">
           Moves
